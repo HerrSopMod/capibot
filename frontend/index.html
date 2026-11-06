@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capibot · POC académica</title>
+<style>
+:root{--navy:#0B1F3A;--navy2:#16325C;--teal:#0E9F8E;--teal-bg:#E6F7F4;--violet:#6D4AE0;--violet-bg:#F0ECFD;--bg:#F5F7FB;--card:#fff;--line:#E3E8F0;--text:#1B2433;--muted:#667085;--warn:#B54708;--warn-bg:#FFF4E5;--err:#B42318;--err-bg:#FEECEA;--ok:#067647;--ok-bg:#E7F6EC;--r:14px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto}
+.logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center}
+.logo svg{width:18px;height:18px}
+.pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.pill.demo{background:#FDE68A;color:#5B4100;letter-spacing:.02em}
+.pill.modo{background:rgba(255,255,255,.14);color:#fff}
+.pill.modo.ia{background:var(--violet)}
+select{font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:var(--navy2);color:#fff}
+nav{background:#fff;border-bottom:1px solid var(--line);display:flex;overflow-x:auto;padding:0 8px;position:sticky;top:0;z-index:5}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:13px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--navy);border-bottom-color:var(--teal)}
+main{max-width:980px;margin:0 auto;padding:16px}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+h2{font-size:17px;margin:0 0 4px;color:var(--navy)}h3{font-size:14px;margin:14px 0 6px;color:var(--navy)}
+p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 12px;font:inherit;font-size:13px;color:var(--navy2);cursor:pointer}
+.chip:hover{border-color:var(--teal);background:var(--teal-bg)}
+#chat{display:flex;flex-direction:column;gap:12px;margin:12px 0}
+.msg.u{align-self:flex-end;background:var(--navy);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;max-width:85%}
+.msg.a{align-self:stretch;background:#fff;border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:14px;animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.texto{white-space:pre-wrap;word-break:break-word}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:11.5px;padding:3px 9px;border-radius:99px;background:var(--teal-bg);color:#0A6B5F;font-weight:600}
+.tag.v{background:var(--violet-bg);color:#4B2FB0}
+.alerta{margin-top:10px;background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.alerta.denegado{background:var(--err-bg);color:var(--err)}
+.alerta b{display:block;margin-bottom:2px}
+.tw{overflow-x:auto;margin-top:10px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+td.wrap{white-space:normal;min-width:220px}
+th{background:#F8FAFC;font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+tr:last-child td{border-bottom:0}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+.cap{font-size:12.5px;font-weight:600;color:var(--navy);margin:12px 0 0}
+.fuentes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.src{border:1px solid var(--line);background:#F8FAFC;border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--navy2);font-family:inherit}
+.src:hover{border-color:var(--violet);background:var(--violet-bg)}
+details{margin-top:10px;font-size:13px;color:var(--muted)}summary{cursor:pointer;font-weight:600}
+.timeline{list-style:none;margin:10px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line)}
+.timeline li{position:relative;padding:3px 0 7px 12px;font-size:13.5px}
+.timeline li::before{content:"";position:absolute;left:-20px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--c,var(--teal));border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.timeline small{color:var(--muted);margin-right:6px}
+form{display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg);padding:10px 0 4px}
+input[type=text]{flex:1;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;min-width:0}
+input[type=text]:focus{outline:2px solid var(--teal);border-color:transparent}
+.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:0 18px;background:var(--teal);color:#fff;cursor:pointer;min-height:44px}
+.btn:disabled{opacity:.5}.btn.sec{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.kpi b{display:block;font-size:26px;color:var(--navy);font-variant-numeric:tabular-nums}.kpi span{font-size:12.5px;color:var(--muted)}
+.est{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px}.est.ok{background:var(--ok-bg);color:var(--ok)}.est.err{background:var(--err-bg);color:var(--err)}
+dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(11,31,58,.3)}
+dialog::backdrop{background:rgba(11,31,58,.45)}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.db{padding:14px 16px}
+.x{background:none;border:0;font-size:22px;cursor:pointer;color:var(--muted)}
+.pensando{color:var(--muted);font-size:13.5px}.pensando::after{content:"…";animation:p 1s steps(3) infinite}@keyframes p{0%{content:"."}50%{content:".."}100%{content:"..."}}
+.vacio{color:var(--muted);font-size:13.5px;padding:8px 0}
+@media(max-width:560px){main{padding:12px}.msg.u{max-width:95%}.btn{padding:0 14px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h7M4 12h7M4 17h7M15 7h5M15 12h5M15 17h5M11 7l4 5-4 5"/></svg></span>Capibot<span style="font-weight:400;opacity:.7;font-size:13px">consulta integrada de Excel</span></div>
+  <span class="pill demo">ENTORNO DEMO — DATOS FICTICIOS</span>
+  <span class="pill modo" id="modo" title="">…</span>
+  <label style="font-size:12px;opacity:.85">Perfil <select id="perfil" aria-label="Perfil de acceso"></select></label>
+</header>
+<nav role="tablist">
+  <button role="tab" data-p="consulta" aria-selected="true">Consulta inteligente</button>
+  <button role="tab" data-p="fuentes" aria-selected="false">Detalle de fuentes</button>
+  <button role="tab" data-p="calidad" aria-selected="false">Carga y calidad</button>
+  <button role="tab" data-p="resumen" aria-selected="false">Resumen general</button>
+</nav>
+<main>
+<section class="panel on" id="p-consulta">
+  <div class="card">
+    <h2>Pregunta sobre los datos de las cuatro áreas</h2>
+    <p class="sub">Finanzas, Operaciones, Logística y Atención mantienen sus propios Excel. Cada respuesta indica de qué archivo, hoja y fila sale.</p>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div id="chat" aria-live="polite"></div>
+  <form id="f"><input type="text" id="q" maxlength="500" placeholder="Escribe tu pregunta, por ejemplo: ¿Cuál es el estado del pedido PE-015?" autocomplete="off" aria-label="Pregunta"><button class="btn" id="enviar">Enviar</button></form>
+</section>
+<section class="panel" id="p-fuentes"><div class="card"><h2>Fuentes de la última respuesta</h2><p class="sub">Registros de los Excel que sustentan la respuesta. Haz clic en una fila para ver el registro original.</p><div id="fuentes-det"><p class="vacio">Aún no hay respuestas. Haz una consulta primero.</p></div></div></section>
+<section class="panel" id="p-calidad"><div class="card"><h2>Archivos importados</h2><p class="sub">Los Excel se leen en modo solo lectura; nunca se modifican. Si cambias uno, reimporta.</p><div id="cargas"></div><p><button class="btn sec" id="reimp">Reimportar desde la carpeta</button></p></div><div class="card"><h2>Filas rechazadas y avisos</h2><div id="rechazos"></div></div></section>
+<section class="panel" id="p-resumen"><div class="grid" id="kpis"></div><div class="card" style="margin-top:14px"><h2>Cómo leer este resumen</h2><p class="sub" style="margin:0">Son conteos reales de la importación actual y de esta sesión; no hay indicadores inventados. Moneda: <span id="mon"></span>. Fecha de referencia para atrasos: <span id="fref"></span>.</p></div></section>
+</main>
+<dialog id="dlg"><div class="dh"><b id="dt">Registro original</b><button class="x" id="dx" aria-label="Cerrar">×</button></div><div class="db" id="db"></div></dialog>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let contexto=null, ultima=null;
+const AREA_NOMBRE={finanzas:'Finanzas',operaciones:'Operaciones',logistica:'Logística',atencion:'Atención'};
+const AREA_COLOR={finanzas:'#0E9F8E',operaciones:'#16325C',logistica:'#6D4AE0',atencion:'#B54708'};
+async function api(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
+function perfil(){return $('#perfil').value}
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p));
+  if(b.dataset.p==='calidad')cargarCalidad(); if(b.dataset.p==='resumen')cargarResumen();
+});
+
+function tablaHtml(t){
+  const d=new Set(t.derecha||[]);
+  return `<div class="cap">${esc(t.titulo)}</div><div class="tw"><table><thead><tr>${t.columnas.map((c,i)=>`<th class="${d.has(i)?'r':''}">${esc(c)}</th>`).join('')}</tr></thead><tbody>${
+    t.filas.map(f=>`<tr>${f.map((v,i)=>`<td class="${d.has(i)?'r':''} ${String(v).length>60?'wrap':''}">${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function fuenteBtn(f){return `<button class="src" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}" title="v${f.version} · modificado ${esc(f.modificado_en)} · sha ${esc(f.hash)}">${esc(f.archivo)} · ${esc(f.hoja)} · fila ${f.fila}${f.id?' · '+esc(f.id):''}</button>`}
+function lineaHtml(l){return l.length?`<h3>Línea de tiempo</h3><ul class="timeline">${l.map(e=>`<li style="--c:${AREA_COLOR[e.area]}"><small>${esc(e.fecha)}</small>${esc(e.evento)} <small>· ${AREA_NOMBRE[e.area]}</small></li>`).join('')}</ul>`:''}
+
+function respuestaHtml(r){
+  const adv=r.advertencias.length?`<div class="alerta ${r.denegado?'denegado':''}"><b>${r.denegado?'Acceso denegado':'Advertencias'}</b>${r.advertencias.map(a=>`<div>• ${esc(a)}</div>`).join('')}</div>`:'';
+  const modoTag=`<span class="tag ${r.modo==='Agente IA'?'v':''}">${esc(r.modo)}</span>`;
+  return `<div class="texto">${esc(r.texto)}</div>${adv}${r.tablas.map(tablaHtml).join('')}${lineaHtml(r.linea_tiempo)}
+  <div class="tags">${modoTag}${r.origen.map(o=>`<span class="tag">${esc(o)}</span>`).join('')}<span class="tag" style="background:#F2F4F7;color:#475467">${r.tiempo_ms} ms</span></div>
+  ${r.fuentes.length?`<div class="cap">Fuentes (${r.fuentes.length})</div><div class="fuentes">${r.fuentes.slice(0,12).map(fuenteBtn).join('')}${r.fuentes.length>12?`<span class="vacio">+${r.fuentes.length-12} más en «Detalle de fuentes»</span>`:''}</div>`:''}
+  <details><summary>Cálculo y trazas</summary>${r.calculos.map(c=>`<div>• ${esc(c)}</div>`).join('')||'<div>Sin cálculo aplicado.</div>'}<div style="margin-top:6px">Herramientas: ${r.herramientas.map(h=>`<code>${esc(h.herramienta)}(${esc(JSON.stringify(h.argumentos))})</code> → ${esc(h.estado)}`).join('; ')||'ninguna'}</div></details>`;
+}
+async function preguntar(texto){
+  texto=texto.trim(); if(!texto)return;
+  const chat=$('#chat'); chat.insertAdjacentHTML('beforeend',`<div class="msg u">${esc(texto)}</div>`);
+  const cargando=document.createElement('div'); cargando.className='msg a pensando'; cargando.textContent='Consultando las fuentes'; chat.append(cargando);
+  $('#q').value=''; $('#enviar').disabled=true; cargando.scrollIntoView({block:'end',behavior:'smooth'});
+  try{
+    const r=await api('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pregunta:texto,perfil:perfil(),contexto})});
+    contexto=r.contexto; ultima=r; cargando.className='msg a'; cargando.innerHTML=respuestaHtml(r); pintarFuentes(r);
+  }catch(e){cargando.className='msg a'; cargando.innerHTML=`<div class="alerta denegado"><b>No se pudo responder</b>${esc(e.message)}</div>`}
+  $('#enviar').disabled=false; cargando.scrollIntoView({block:'end',behavior:'smooth'}); $('#q').focus();
+}
+$('#f').onsubmit=e=>{e.preventDefault();preguntar($('#q').value)};
+$('#chips').onclick=e=>{if(e.target.classList.contains('chip'))preguntar(e.target.textContent)};
+
+function pintarFuentes(r){
+  if(!r.fuentes.length){$('#fuentes-det').innerHTML='<p class="vacio">La última respuesta no usó filas de ningún Excel.</p>';return}
+  $('#fuentes-det').innerHTML=`<div class="tw"><table><thead><tr><th>Área</th><th>Archivo</th><th>Hoja</th><th class="r">Fila</th><th>Registro</th><th class="r">Versión</th><th>Actualizado</th><th>Huella</th></tr></thead><tbody>${
+   r.fuentes.map(f=>`<tr class="src-row" style="cursor:pointer" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}"><td>${AREA_NOMBRE[f.area]}</td><td>${esc(f.archivo)}</td><td>${esc(f.hoja)}</td><td class="r">${f.fila}</td><td>${esc(f.id||'—')}</td><td class="r">${f.version}</td><td>${esc(f.modificado_en.replace('T',' '))}</td><td><code>${esc(f.hash)}</code></td></tr>`).join('')}</tbody></table></div>`;
+}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a][data-h][data-f]'); if(el)verFuente(el.dataset.a,el.dataset.h,el.dataset.f)});
+async function verFuente(a,h,f){
+  $('#dt').textContent=`${a} · ${h} · fila ${f}`; $('#db').innerHTML='<p class="pensando">Leyendo registro</p>'; $('#dlg').showModal();
+  try{const r=await api(`/api/fuente?archivo=${encodeURIComponent(a)}&hoja=${encodeURIComponent(h)}&fila=${f}&perfil=${perfil()}`);
+    $('#db').innerHTML=`<div class="texto">${esc(r.texto)}</div>${r.tablas.map(tablaHtml).join('')}`}
+  catch(e){$('#db').innerHTML=`<div class="alerta denegado">${esc(e.message)}</div>`}
+}
+$('#dx').onclick=()=>$('#dlg').close();
+
+function cargasHtml(cs){return `<div class="tw"><table><thead><tr><th>Área</th><th>Archivo</th><th>Hoja</th><th>Estado</th><th class="r">Versión</th><th class="r">Leídas</th><th class="r">Válidas</th><th class="r">Rechazadas</th><th class="r">Avisos</th><th>Actualizado</th></tr></thead><tbody>${
+ cs.map(c=>`<tr><td>${AREA_NOMBRE[c.area]}</td><td>${esc(c.archivo)}</td><td>${esc(c.hoja)}</td><td><span class="est ${c.estado==='ok'?'ok':'err'}">${c.estado==='ok'?'Importado':'Error'}</span>${c.error?`<div class="vacio" style="white-space:normal">${esc(c.error)}</div>`:''}</td><td class="r">${c.version??'—'}</td><td class="r">${c.filas_leidas}</td><td class="r">${c.validas}</td><td class="r">${c.rechazadas}</td><td class="r">${c.avisos}</td><td>${esc((c.modificado_en||'—').replace('T',' '))}</td></tr>`).join('')}</tbody></table></div>`}
+async function cargarCalidad(){
+  const c=await api('/api/calidad'); $('#cargas').innerHTML=cargasHtml(c.cargas);
+  const rows=[...c.rechazos.map(r=>['Rechazada',r.archivo,r.fila,r.causa]),...c.avisos.map(r=>['Aviso',r.archivo,r.fila,r.aviso])];
+  $('#rechazos').innerHTML=rows.length?`<div class="tw"><table><thead><tr><th>Tipo</th><th>Archivo</th><th class="r">Fila</th><th>Causa</th></tr></thead><tbody>${rows.map(r=>`<tr class="src-row" style="cursor:pointer" data-a="${esc(r[1])}" data-h="${esc(({'finanzas.xlsx':'Facturas','operaciones.xlsx':'Pedidos','logistica.xlsx':'Entregas','atencion.xlsx':'Tickets'})[r[1]])}" data-f="${r[2]}"><td><span class="est ${r[0]==='Rechazada'?'err':'ok'}">${r[0]}</span></td><td>${esc(r[1])}</td><td class="r">${r[2]}</td><td class="wrap">${esc(r[3])}</td></tr>`).join('')}</tbody></table></div>`:'<p class="vacio">Sin filas rechazadas ni avisos.</p>';
+}
+$('#reimp').onclick=async()=>{$('#reimp').disabled=true;try{await api('/api/reimportar',{method:'POST'});await cargarCalidad();await estado()}finally{$('#reimp').disabled=false}};
+async function cargarResumen(){
+  const e=await estado(), m=e.metricas;
+  const k=[[Object.values(m.registros_validos).reduce((a,b)=>a+b,0),'registros válidos importados'],...Object.entries(m.registros_validos).map(([a,n])=>[n,'registros de '+AREA_NOMBRE[a]]),
+    [m.filas_rechazadas,'filas rechazadas al importar'],[m.avisos_de_calidad,'avisos de calidad (campos vacíos)'],[m.inconsistencias_entre_areas??'—','inconsistencias entre áreas'],[m.consultas_en_esta_sesion,'consultas en esta sesión']];
+  $('#kpis').innerHTML=k.map(([n,t])=>`<div class="kpi"><b>${n}</b><span>${t}</span></div>`).join('');
+  $('#mon').textContent=e.moneda; $('#fref').textContent=e.fecha_referencia.split('-').reverse().join('/');
+}
+async function estado(){
+  const e=await api('/api/estado'); const m=$('#modo'); m.textContent=e.modo.nombre; m.title=e.modo.detalle; m.classList.toggle('ia',e.modo.ia); return e;
+}
+(async()=>{
+  const [ps,sg]=await Promise.all([api('/api/perfiles'),api('/api/sugerencias')]);
+  $('#perfil').innerHTML=ps.map(p=>`<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('');
+  $('#chips').innerHTML=sg.map(s=>`<button class="chip" type="button">${esc(s)}</button>`).join('');
+  $('#perfil').onchange=()=>{contexto=null};
+  await estado();
+})().catch(e=>{$('#chat').innerHTML=`<div class="alerta denegado">No se pudo conectar con el servidor: ${esc(e.message)}</div>`});
+</script>
+</body>
+</html>
