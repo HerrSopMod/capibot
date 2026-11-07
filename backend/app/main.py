@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .agents.router import SUGERENCIAS
@@ -27,6 +28,8 @@ def crear_app(cfg: Config | None = None) -> FastAPI:
     servicio = Servicio(cfg, catalogo)
     app = FastAPI(title="Capibot (POC académica)", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.servicio = servicio
+
+    app.mount("/icons", StaticFiles(directory=RAIZ / "frontend" / "icons"), name="icons")
 
     @app.get("/", include_in_schema=False)
     def inicio():

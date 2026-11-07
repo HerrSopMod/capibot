@@ -13,6 +13,12 @@ Cuatro áreas (Finanzas, Operaciones, Logística y Atención) mantienen sus prop
 
 La interfaz muestra siempre el modo activo («Consultas por reglas» o «Agente IA»). Mientras no se valide el Nivel B con un modelo real, describe el entregable como *«POC de integración y consulta conversacional preparada para IA»*.
 
+## Diagrama de despliegue
+
+![Diagrama de despliegue de Capibot](docs/img/despliegue.png)
+
+El navegador consulta por HTTPS a la aplicación FastAPI (en Render o en local), que lee los Excel en modo solo lectura, los carga en DuckDB y responde con herramientas cerradas. GitHub redespliega en cada push a `main`; Ollama es opcional y solo local. Logotipos: Simple Icons (Python, FastAPI, DuckDB, HTML5, JavaScript, GitHub, Render, Ollama, pytest); el de Excel está dibujado a mano.
+
 ## Instalación y ejecución en Windows (PowerShell)
 
 Requisitos: Python 3.11 o superior (probado con 3.14).

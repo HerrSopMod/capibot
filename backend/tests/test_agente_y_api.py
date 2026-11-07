@@ -96,6 +96,7 @@ def test_api_chat_y_fuente_de_extremo_a_extremo(tmp_path):
     c = _cliente(tmp_path)
     r = c.post("/api/chat", json={"pregunta": "¿Cuál es el estado del pedido PE-015?", "perfil": "analista"}).json()
     assert "S/ 1,250.50" in r["texto"] and r["contexto"]["ultimo_pedido"] == "PE-015"
+    assert r["datos"][0]["herramienta"] == "consultar_pedido" and r["datos"][0]["datos"]["entregado"] == "si"
     f = r["fuentes"][0]
     det = c.get("/api/fuente", params={"archivo": f["archivo"], "hoja": f["hoja"], "fila": f["fila"]}).json()
     assert det["datos"]["valida"] is True

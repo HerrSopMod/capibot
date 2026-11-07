@@ -108,6 +108,7 @@ class Servicio:
             "fuentes": fuentes,
             "advertencias": advertencias,
             "calculos": [r.calculo for r in resultados if r.calculo],
+            "datos": [{"herramienta": r.herramienta, "datos": r.datos} for r in resultados],
             "linea_tiempo": next((r.linea_tiempo for r in resultados if r.linea_tiempo), []),
             "origen": origen,
             "herramientas": llamadas,

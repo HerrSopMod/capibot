@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Capibot · POC académica</title>
 <style>
-:root{--navy:#0B1F3A;--navy2:#16325C;--teal:#0E9F8E;--teal-bg:#E6F7F4;--violet:#6D4AE0;--violet-bg:#F0ECFD;--bg:#F5F7FB;--card:#fff;--line:#E3E8F0;--text:#1B2433;--muted:#667085;--warn:#B54708;--warn-bg:#FFF4E5;--err:#B42318;--err-bg:#FEECEA;--ok:#067647;--ok-bg:#E7F6EC;--r:14px}
+:root{--navy:#0B1F3A;--navy2:#16325C;--teal:#0E9F8E;--teal-bg:#E6F7F4;--violet:#6D4AE0;--violet-bg:#F0ECFD;--bg:#F5F7FB;--card:#fff;--line:#E3E8F0;--text:#1B2433;--muted:#667085;--warn:#B54708;--warn-bg:#FFF4E5;--err:#B42318;--err-bg:#FEECEA;--ok:#067647;--ok-bg:#E7F6EC;--r:14px;--hdr:#0B1F3A;--soft:var(--soft);--soft2:var(--soft2)}
+@media(prefers-color-scheme:dark){:root{--navy:#E6EDF7;--navy2:#9DB8E8;--bg:#0B1220;--card:#121C30;--line:#243350;--text:#E6EDF7;--muted:#98A2B3;--teal-bg:#0F3B3A;--violet-bg:#2A2150;--warn:#F5B971;--warn-bg:#3A2A12;--err:#FDA29B;--err-bg:#3A1A18;--ok:#75E0A7;--ok-bg:#0E3322;--soft:#17233B;--soft2:#1B2A45}.tag{color:#5EEAD4!important}.tag.v{color:#C4B5FD!important}input[type=text]{color:var(--text)}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
-header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+header{background:var(--hdr);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto}
 .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center}
 .logo svg{width:18px;height:18px}
@@ -18,7 +19,7 @@ header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;flex-wra
 .pill.modo{background:rgba(255,255,255,.14);color:#fff}
 .pill.modo.ia{background:var(--violet)}
 select{font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:var(--navy2);color:#fff}
-nav{background:#fff;border-bottom:1px solid var(--line);display:flex;overflow-x:auto;padding:0 8px;position:sticky;top:0;z-index:5}
+nav{background:var(--card);border-bottom:1px solid var(--line);display:flex;overflow-x:auto;padding:0 8px;position:sticky;top:0;z-index:5}
 nav button{background:none;border:0;border-bottom:3px solid transparent;padding:13px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
 nav button[aria-selected=true]{color:var(--navy);border-bottom-color:var(--teal)}
 main{max-width:980px;margin:0 auto;padding:16px}
@@ -27,11 +28,11 @@ main{max-width:980px;margin:0 auto;padding:16px}
 h2{font-size:17px;margin:0 0 4px;color:var(--navy)}h3{font-size:14px;margin:14px 0 6px;color:var(--navy)}
 p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 12px;font:inherit;font-size:13px;color:var(--navy2);cursor:pointer}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:7px 12px;font:inherit;font-size:13px;color:var(--navy2);cursor:pointer}
 .chip:hover{border-color:var(--teal);background:var(--teal-bg)}
 #chat{display:flex;flex-direction:column;gap:12px;margin:12px 0}
-.msg.u{align-self:flex-end;background:var(--navy);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;max-width:85%}
-.msg.a{align-self:stretch;background:#fff;border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:14px;animation:in .25s ease}
+.msg.u{align-self:flex-end;background:var(--hdr);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;max-width:85%}
+.msg.a{align-self:stretch;background:var(--card);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:14px;animation:in .25s ease}
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .texto{white-space:pre-wrap;word-break:break-word}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -44,25 +45,25 @@ p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 td.wrap{white-space:normal;min-width:220px}
-th{background:#F8FAFC;font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+th{background:var(--soft);font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
 tr:last-child td{border-bottom:0}
 th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
 .cap{font-size:12.5px;font-weight:600;color:var(--navy);margin:12px 0 0}
 .fuentes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.src{border:1px solid var(--line);background:#F8FAFC;border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--navy2);font-family:inherit}
+.src{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--navy2);font-family:inherit}
 .src:hover{border-color:var(--violet);background:var(--violet-bg)}
 details{margin-top:10px;font-size:13px;color:var(--muted)}summary{cursor:pointer;font-weight:600}
 .timeline{list-style:none;margin:10px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line)}
 .timeline li{position:relative;padding:3px 0 7px 12px;font-size:13.5px}
-.timeline li::before{content:"";position:absolute;left:-20px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--c,var(--teal));border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.timeline li::before{content:"";position:absolute;left:-20px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--c,var(--teal));border:2px solid var(--card);box-shadow:0 0 0 1px var(--line)}
 .timeline small{color:var(--muted);margin-right:6px}
 form{display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg);padding:10px 0 4px}
-input[type=text]{flex:1;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;min-width:0}
+input[type=text]{flex:1;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);min-width:0}
 input[type=text]:focus{outline:2px solid var(--teal);border-color:transparent}
 .btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:0 18px;background:var(--teal);color:#fff;cursor:pointer;min-height:44px}
-.btn:disabled{opacity:.5}.btn.sec{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.btn:disabled{opacity:.5}.btn.sec{background:var(--card);color:var(--navy);border:1px solid var(--line)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
 .kpi b{display:block;font-size:26px;color:var(--navy);font-variant-numeric:tabular-nums}.kpi span{font-size:12.5px;color:var(--muted)}
 .est{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px}.est.ok{background:var(--ok-bg);color:var(--ok)}.est.err{background:var(--err-bg);color:var(--err)}
 dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(11,31,58,.3)}
@@ -71,9 +72,9 @@ dialog::backdrop{background:rgba(11,31,58,.45)}
 .x{background:none;border:0;font-size:22px;cursor:pointer;color:var(--muted)}
 .pensando{color:var(--muted);font-size:13.5px}.pensando::after{content:"…";animation:p 1s steps(3) infinite}@keyframes p{0%{content:"."}50%{content:".."}100%{content:"..."}}
 .vacio{color:var(--muted);font-size:13.5px;padding:8px 0}
-.est.warn{background:var(--warn-bg);color:var(--warn)}.est.neu{background:#F2F4F7;color:#475467}
+.est.warn{background:var(--warn-bg);color:var(--warn)}.est.neu{background:var(--soft2);color:var(--muted)}
 .areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
-.area{border:1px solid var(--line);border-left:4px solid var(--c,var(--teal));border-radius:10px;padding:8px 11px;background:#fff}
+.area{border:1px solid var(--line);border-left:4px solid var(--c,var(--teal));border-radius:10px;padding:8px 11px;background:var(--card)}
 .area b{display:block;font-size:13.5px;color:var(--navy)}.area span{font-size:12px;color:var(--muted)}
 .area.off{border-left-color:var(--err);background:var(--err-bg)}
 .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -83,6 +84,9 @@ dialog::backdrop{background:rgba(11,31,58,.45)}
 .bienvenida ul{margin:6px 0 0;padding-left:18px}
 @media(max-width:560px){.chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}.chip{white-space:nowrap;scroll-snap-align:start}.brand small{display:none}}
 @media(max-width:560px){main{padding:12px}.msg.u{max-width:95%}.btn{padding:0 14px}}
+.veredicto{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.vchip{display:flex;flex-direction:column;padding:9px 16px;border-radius:12px;min-width:128px}.vchip small{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.05em}.vchip b{font-size:17px}.vchip.ok{background:var(--ok-bg);color:var(--ok)}.vchip.warn{background:var(--warn-bg);color:var(--warn)}.vchip.err{background:var(--err-bg);color:var(--err)}.vchip.neu{background:var(--soft2);color:var(--muted)}
+nav svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px}
+footer{max-width:980px;margin:0 auto;padding:6px 16px 28px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;color:var(--muted);font-size:12.5px}footer img{width:22px;height:22px;background:#fff;border-radius:6px;padding:2px;border:1px solid var(--line)}footer .sep{flex:1 1 100%;height:0}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
@@ -94,10 +98,10 @@ dialog::backdrop{background:rgba(11,31,58,.45)}
   <label style="font-size:12px;opacity:.85">Perfil <select id="perfil" aria-label="Perfil de acceso"></select></label>
 </header>
 <nav role="tablist">
-  <button role="tab" data-p="consulta" aria-selected="true">Consulta inteligente</button>
-  <button role="tab" data-p="fuentes" aria-selected="false">Detalle de fuentes</button>
-  <button role="tab" data-p="calidad" aria-selected="false">Carga y calidad</button>
-  <button role="tab" data-p="resumen" aria-selected="false">Resumen general</button>
+  <button role="tab" data-p="consulta" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Consulta inteligente</button>
+  <button role="tab" data-p="fuentes" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5"/></svg>Detalle de fuentes</button>
+  <button role="tab" data-p="calidad" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Carga y calidad</button>
+  <button role="tab" data-p="resumen" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Resumen general</button>
 </nav>
 <main>
 <section class="panel on" id="p-consulta">
@@ -116,6 +120,7 @@ dialog::backdrop{background:rgba(11,31,58,.45)}
 <section class="panel" id="p-calidad"><div class="card"><h2>Archivos importados</h2><p class="sub">Los Excel se leen en modo solo lectura; nunca se modifican. Si cambias uno, reimporta.</p><div id="cargas"></div><p><button class="btn sec" id="reimp">Reimportar desde la carpeta</button></p></div><div class="card"><h2>Filas rechazadas y avisos</h2><div id="rechazos"></div></div></section>
 <section class="panel" id="p-resumen"><div class="grid" id="kpis"></div><div class="card" style="margin-top:14px"><h2>Cómo leer este resumen</h2><p class="sub" style="margin:0">Son conteos reales de la importación actual y de esta sesión; no hay indicadores inventados. Moneda: <span id="mon"></span>. Fecha de referencia para atrasos: <span id="fref"></span>.</p></div></section>
 </main>
+<footer><span>Construido con</span><img src="/icons/python.svg" alt="Python" title="Python"><img src="/icons/fastapi.svg" alt="FastAPI" title="FastAPI"><img src="/icons/duckdb.svg" alt="DuckDB" title="DuckDB"><img src="/icons/html5.svg" alt="HTML5" title="HTML5"><img src="/icons/github.svg" alt="GitHub" title="GitHub"><img src="/icons/render.svg" alt="Render" title="Render"><span class="sep"></span><span>POC académica · SI806U · datos ficticios, solo lectura</span></footer>
 <dialog id="dlg"><div class="dh"><b id="dt">Registro original</b><button class="x" id="dx" aria-label="Cerrar">×</button></div><div class="db" id="db"></div></dialog>
 <script>
 const $=s=>document.querySelector(s);
@@ -148,11 +153,14 @@ function pintarAreas(cs){$('#areas').innerHTML=cs.map(c=>`<div class="area ${c.e
 function fuenteBtn(f){return `<button class="src" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}" title="v${f.version} · modificado ${esc(f.modificado_en)} · sha ${esc(f.hash)}">${esc(f.archivo)} · ${esc(f.hoja)} · fila ${f.fila}${f.id?' · '+esc(f.id):''}</button>`}
 function lineaHtml(l){return l.length?`<h3>Línea de tiempo</h3><ul class="timeline">${l.map(e=>`<li style="--c:${AREA_COLOR[e.area]}"><small>${esc(e.fecha)}</small>${esc(e.evento)} <small>· ${AREA_NOMBRE[e.area]}</small></li>`).join('')}</ul>`:''}
 
+const VC={si:["ok","Sí"],no:["warn","No"],contradictorio:["err","Contradictorio"],no_consta:["neu","No consta"]};
+function veredicto(r){const x=(r.datos||[]).find(d=>d.herramienta==="consultar_pedido"&&d.datos.encontrado);if(!x)return "";const d=x.datos,e=VC[d.entregado]||VC.no_consta,p=d.pagado==="no"?["err","No"]:(VC[d.pagado]||VC.no_consta),t=d.tickets_abiertos;
+return `<div class="veredicto"><div class="vchip ${e[0]}"><small>Entregado</small><b>${e[1]}</b></div><div class="vchip ${p[0]}"><small>Pagado</small><b>${p[1]}</b></div><div class="vchip ${t?"warn":"ok"}"><small>Reclamos abiertos</small><b>${t}</b></div></div>`}
 function respuestaHtml(r){
   const adv=r.advertencias.length?`<div class="alerta ${r.denegado?'denegado':''}"><b>${r.denegado?'Acceso denegado':'Advertencias'}</b>${r.advertencias.map(a=>`<div>• ${esc(a)}</div>`).join('')}</div>`:'';
   const modoTag=`<span class="tag ${r.modo==='Agente IA'?'v':''}">${esc(r.modo)}</span>`;
-  return `<div class="texto">${esc(r.texto)}</div>${adv}${r.tablas.map(tablaHtml).join('')}${lineaHtml(r.linea_tiempo)}
-  <div class="tags">${modoTag}${r.origen.map(o=>`<span class="tag">${esc(o)}</span>`).join('')}<span class="tag" style="background:#F2F4F7;color:#475467">${r.tiempo_ms} ms</span></div>
+  return `${veredicto(r)}<div class="texto">${esc(r.texto)}</div>${adv}${r.tablas.map(tablaHtml).join('')}${lineaHtml(r.linea_tiempo)}
+  <div class="tags">${modoTag}${r.origen.map(o=>`<span class="tag">${esc(o)}</span>`).join('')}<span class="tag" style="background:var(--soft2);color:var(--muted)">${r.tiempo_ms} ms</span><button class="link copiar" type="button">Copiar respuesta</button></div>
   ${r.fuentes.length?`<div class="cap">Fuentes (${r.fuentes.length})</div><div class="fuentes">${r.fuentes.slice(0,12).map(fuenteBtn).join('')}${r.fuentes.length>12?`<span class="vacio">+${r.fuentes.length-12} más en «Detalle de fuentes»</span>`:''}</div>`:''}
   <details><summary>Cálculo y trazas</summary>${r.calculos.map(c=>`<div>• ${esc(c)}</div>`).join('')||'<div>Sin cálculo aplicado.</div>'}<div style="margin-top:6px">Herramientas: ${r.herramientas.map(h=>`<code>${esc(h.herramienta)}(${esc(JSON.stringify(h.argumentos))})</code> → ${esc(h.estado)}`).join('; ')||'ninguna'}</div></details>`;
 }
@@ -175,7 +183,7 @@ function pintarFuentes(r){
   $('#fuentes-det').innerHTML=`<div class="tw"><table><thead><tr><th>Área</th><th>Archivo</th><th>Hoja</th><th class="r">Fila</th><th>Registro</th><th class="r">Versión</th><th>Actualizado</th><th>Huella</th></tr></thead><tbody>${
    r.fuentes.map(f=>`<tr class="src-row" style="cursor:pointer" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}"><td>${AREA_NOMBRE[f.area]}</td><td>${esc(f.archivo)}</td><td>${esc(f.hoja)}</td><td class="r">${f.fila}</td><td>${esc(f.id||'—')}</td><td class="r">${f.version}</td><td>${esc(f.modificado_en.replace('T',' '))}</td><td><code>${esc(f.hash)}</code></td></tr>`).join('')}</tbody></table></div>`;
 }
-document.addEventListener('click',e=>{const el=e.target.closest('[data-a][data-h][data-f]'); if(el)verFuente(el.dataset.a,el.dataset.h,el.dataset.f)});
+document.addEventListener("click",async e=>{const c=e.target.closest(".copiar");if(c){try{await navigator.clipboard.writeText(c.closest(".msg").querySelector(".texto").innerText);c.textContent="Copiado ✓"}catch{c.textContent="No se pudo copiar"}setTimeout(()=>c.textContent="Copiar respuesta",1500);return}const el=e.target.closest('[data-a][data-h][data-f]'); if(el)verFuente(el.dataset.a,el.dataset.h,el.dataset.f)});
 async function verFuente(a,h,f){
   $('#dt').textContent=`${a} · ${h} · fila ${f}`; $('#db').innerHTML='<p class="pensando">Leyendo registro</p>'; $('#dlg').showModal();
   try{const r=await api(`/api/fuente?archivo=${encodeURIComponent(a)}&hoja=${encodeURIComponent(h)}&fila=${f}&perfil=${perfil()}`);
