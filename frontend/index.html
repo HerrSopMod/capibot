@@ -127,7 +127,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let contexto=null, ultima=null;
 const AREA_NOMBRE={finanzas:'Finanzas',operaciones:'Operaciones',logistica:'Logística',atencion:'Atención'};
-const AREA_COLOR={finanzas:'#0E9F8E',operaciones:'#16325C',logistica:'#6D4AE0',atencion:'#B54708'};
+const AREA_COLOR={finanzas:'#0E9F8E',operaciones:'#3B72D9',logistica:'#6D4AE0',atencion:'#B54708'};
 async function api(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
 function perfil(){return $('#perfil').value}
 
