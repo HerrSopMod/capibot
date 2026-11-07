@@ -30,7 +30,7 @@ def crear_app(cfg: Config | None = None) -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     def inicio():
-        return FileResponse(FRONTEND)
+        return FileResponse(FRONTEND, headers={"Cache-Control": "no-cache"})
 
     @app.get("/api/estado")
     def estado():

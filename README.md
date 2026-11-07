@@ -50,6 +50,16 @@ python -m venv .venv
 
 Guion de exposición de 5 minutos: [DEMO.md](DEMO.md).
 
+## Publicarlo en línea (opcional, p. ej. para el docente)
+
+El repo trae `render.yaml` para [Render](https://render.com) (plan gratuito):
+
+1. Crea una cuenta en Render y elige **New → Blueprint**.
+2. Conecta el repositorio `capibot` de GitHub; Render lee `render.yaml` y despliega.
+3. Al terminar te da una URL pública. En el plan gratuito el servicio se duerme tras inactividad y la primera carga puede tardar de 30 a 60 s.
+
+En línea solo funciona el modo «Consultas por reglas» (Ollama es local). No hay autenticación: cualquiera con el enlace puede usarlo y elegir cualquier perfil; es aceptable porque los datos son ficticios y el sistema solo lee. **Esta configuración no se ha probado en Render** (no se creó ninguna cuenta); en local sí se probó el mismo comando de arranque.
+
 ## Variables de entorno (todas opcionales — ver `.env.example`)
 
 | Variable | Defecto | Efecto |

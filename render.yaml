@@ -1,0 +1,14 @@
+# Despliegue en Render (plan gratuito). Solo modo "Consultas por reglas": no hay Ollama en la nube.
+services:
+  - type: web
+    name: capibot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/estado
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: MODO_AGENTE
+        value: reglas
