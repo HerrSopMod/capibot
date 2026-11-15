@@ -31,12 +31,14 @@ class Config:
     generado_dir: Path
     moneda: str = "PEN"
     zona_horaria: str = "America/Lima"
+    subidos_dir: Path | None = None
 
 
 def cargar_config() -> Config:
     _leer_dotenv()
     datos = Path(os.environ.get("DATOS_DIR", "data/synthetic"))
     generado = Path(os.environ.get("GENERADO_DIR", "data/generated"))
+    subidos = Path(os.environ.get("SUBIDOS_DIR", "data/uploads"))
     return Config(
         modo_agente=os.environ.get("MODO_AGENTE", "reglas").strip().lower(),
         ollama_url=os.environ.get("OLLAMA_URL", "http://localhost:11434").rstrip("/"),
@@ -44,4 +46,5 @@ def cargar_config() -> Config:
         fecha_referencia=date.fromisoformat(os.environ.get("FECHA_REFERENCIA", "2026-10-31")),
         datos_dir=datos if datos.is_absolute() else RAIZ / datos,
         generado_dir=generado if generado.is_absolute() else RAIZ / generado,
+        subidos_dir=subidos if subidos.is_absolute() else RAIZ / subidos,
     )

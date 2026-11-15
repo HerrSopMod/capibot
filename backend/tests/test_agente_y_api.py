@@ -1,4 +1,7 @@
 """Nivel B con un modelo simulado (no se prueba contra un LLM real) y pruebas de la API HTTP."""
+from io import BytesIO
+
+from openpyxl import Workbook
 from fastapi.testclient import TestClient
 
 from app.agents.llm import responder_con_llm
@@ -80,15 +83,45 @@ def test_agente_respeta_permisos_del_perfil(tmp_path):
 
 # --------------------------------------------------------------------- API
 def _cliente(tmp_path):
-    return TestClient(crear_app(crear_config(SYNTH, tmp_path / "gen")))
+    cliente = TestClient(crear_app(crear_config(SYNTH, tmp_path / "gen")))
+    respuesta = cliente.post("/api/login", json={"usuario": "admin", "contrasena": "12345678"})
+    assert respuesta.status_code == 200
+    return cliente
 
 
-def test_api_arranca_sin_clave_en_modo_reglas(tmp_path):
+def test_api_login_requerido_y_cierre_de_sesion(tmp_path):
+    c = TestClient(crear_app(crear_config(SYNTH, tmp_path / "gen")))
+    assert c.get("/").status_code == 200
+    assert "Iniciar sesión" in c.get("/").text
+    assert c.get("/api/sesion").json() == {"autenticado": False}
+    assert c.get("/api/estado").status_code == 401
+    assert c.get("/api/calidad").status_code == 401
+    assert c.get("/api/calidad/descargar").status_code == 401
+    assert c.get("/api/perfiles").status_code == 401
+    assert c.get("/api/sugerencias").status_code == 401
+    assert c.post("/api/chat", json={"pregunta": "hola"}).status_code == 401
+    assert c.post("/api/reimportar").status_code == 401
+    assert c.get("/api/fuente", params={"archivo": "finanzas.xlsx", "hoja": "Facturas", "fila": 2}).status_code == 401
+    assert c.post("/api/login", json={"usuario": "admin", "contrasena": "incorrecta"}).status_code == 401
+    assert c.get("/api/estado").status_code == 401
+    login = c.post("/api/login", json={"usuario": "admin", "contrasena": "12345678"})
+    assert login.status_code == 200
+    assert "httponly" in login.headers["set-cookie"].lower()
+    assert "samesite=strict" in login.headers["set-cookie"].lower()
+    assert c.get("/api/sesion").json() == {"autenticado": True}
+    assert c.get("/api/estado").status_code == 200
+    assert c.post("/api/logout").status_code == 200
+    assert c.get("/api/sesion").json() == {"autenticado": False}
+    assert c.get("/api/estado").status_code == 401
+
+
+def test_api_arranca_con_login_en_modo_reglas(tmp_path):
     c = _cliente(tmp_path)
     e = c.get("/api/estado").json()
     assert e["modo"]["nombre"] == "Consultas por reglas" and e["modo"]["ia"] is False
     assert e["entorno"] == "ENTORNO DEMO — DATOS FICTICIOS"
-    assert all(x["estado"] == "ok" for x in e["cargas"])
+    assert len(e["cargas"]) == 10 and all(x["estado"] == "ok" for x in e["cargas"])
+    assert len(c.get("/api/perfiles").json()) == 11
     assert "Consulta" in c.get("/").text
 
 
@@ -108,5 +141,113 @@ def test_api_chat_y_fuente_de_extremo_a_extremo(tmp_path):
 def test_api_calidad_y_reimportar(tmp_path):
     c = _cliente(tmp_path)
     q = c.get("/api/calidad").json()
-    assert len(q["rechazos"]) == 2 and len(q["cargas"]) == 4
-    assert len(c.post("/api/reimportar").json()["cargas"]) == 4
+    assert len(q["rechazos"]) == 2 and len(q["cargas"]) == 10
+    assert len(c.post("/api/reimportar").json()["cargas"]) == 10
+
+
+def test_api_subir_csv_agrega_datos_y_reporta_vacios_en_avisos_y_rechazos(tmp_path):
+    c = _cliente(tmp_path)
+    contenido = (
+        "id_acta,id_pedido,id_cliente,id_multa,fecha_acta,estado_acta,observacion\n"
+        "AC-900001,PE-015,CL-006,MU-900001,2026-10-01,Emitida,\n"
+        "AC-900002,PE-016,CL-007,MU-900002,,Emitida,registro incompleto\n"
+    )
+    respuesta = c.post(
+        "/api/subir",
+        data={"area": "fiscalizacion"},
+        files={"archivo": ("actas.csv", contenido.encode("utf-8"), "text/csv")},
+    )
+    assert respuesta.status_code == 200, respuesta.text
+    nombre = respuesta.json()["archivo"]
+    carga = respuesta.json()["carga"]
+    assert carga["validas"] == 61 and carga["rechazadas"] == 1 and carga["avisos"] == 2
+    calidad = c.get("/api/calidad").json()
+    assert any(r["archivo"] == nombre and "fecha_acta" in r["causa"] for r in calidad["rechazos"])
+    assert any(r["archivo"] == nombre and r["aviso"] == "campo vacío: observacion" for r in calidad["avisos"])
+    assert any(r["archivo"] == nombre and r["aviso"] == "campo vacío: fecha_acta" for r in calidad["avisos"])
+    assert any(r["archivo"] == nombre and r["columna"] == "fecha_acta" and r["valor"] is None
+               for r in calidad["avisos"])
+    valida = c.get("/api/fuente", params={"archivo": nombre, "hoja": "Actas", "fila": 2})
+    rechazada = c.get("/api/fuente", params={"archivo": nombre, "hoja": "Actas", "fila": 3})
+    assert valida.json()["datos"]["valida"] is True
+    assert rechazada.json()["datos"]["valida"] is False
+    assert c.post("/api/reimportar").json()["cargas"][4]["validas"] == 61
+
+
+def test_api_subir_excel_y_rechazar_esquema_incorrecto_sin_romper_area(tmp_path):
+    c = _cliente(tmp_path)
+    libro = Workbook()
+    hoja = libro.active
+    hoja.title = "Datos"
+    hoja.append(["id_acta", "id_pedido", "id_cliente", "id_multa", "fecha_acta", "estado_acta"])
+    hoja.append(["AC-900010", "PE-017", "CL-001", "MU-900010", "2026-10-02", "Emitida"])
+    contenido = BytesIO()
+    libro.save(contenido)
+
+    respuesta = c.post("/api/subir", data={"area": "fiscalizacion"},
+                       files={"archivo": ("actas.xlsx", contenido.getvalue(),
+                                          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
+    assert respuesta.status_code == 200, respuesta.text
+    nombre = respuesta.json()["archivo"]
+    assert respuesta.json()["carga"]["validas"] == 61
+    fuente = c.get("/api/fuente", params={"archivo": nombre, "hoja": "Datos", "fila": 2})
+    assert fuente.json()["datos"]["valida"] is True
+
+    mala = "id_acta,id_pedido\nAC-900011,PE-018\n"
+    fallo = c.post("/api/subir", data={"area": "fiscalizacion"},
+                   files={"archivo": ("incompleto.csv", mala.encode(), "text/csv")})
+    assert fallo.status_code == 400
+    cargas = c.get("/api/estado").json()["cargas"]
+    assert next(x for x in cargas if x["area"] == "fiscalizacion")["validas"] == 61
+
+
+def test_api_valores_invalidos_aparecen_como_rechazo_y_aviso_y_se_descargan_en_excel(tmp_path):
+    from openpyxl import load_workbook
+
+    c = _cliente(tmp_path)
+    contenido = (
+        "id_acta,id_pedido,id_cliente,id_multa,fecha_acta,estado_acta\n"
+        "BAD,PE-900001,CL-900001,MU-900001,2026-99-99,desconocido\n"
+    )
+    respuesta = c.post(
+        "/api/subir",
+        data={"area": "fiscalizacion"},
+        files={"archivo": ("invalidas.csv", contenido.encode("utf-8"), "text/csv")},
+    )
+    assert respuesta.status_code == 200, respuesta.text
+    nombre = respuesta.json()["archivo"]
+    calidad = c.get("/api/calidad").json()
+    fila_rechazada = next(r for r in calidad["rechazos"] if r["archivo"] == nombre)
+    assert all(campo in fila_rechazada["causa"] for campo in ("id_acta", "fecha_acta", "estado_acta"))
+    avisos = [r for r in calidad["avisos"] if r["archivo"] == nombre]
+    assert {r["columna"] for r in avisos} == {"id_acta", "fecha_acta", "estado_acta"}
+    assert all("valor no válido" in r["aviso"] for r in avisos)
+
+    exportacion = c.get("/api/calidad/descargar")
+    assert exportacion.status_code == 200
+    libro = load_workbook(BytesIO(exportacion.content), read_only=True, data_only=True)
+    assert libro.sheetnames == ["Rechazos 1", "Avisos 1"]
+    assert next(libro["Rechazos 1"].iter_rows(values_only=True))[0:4] == ("Área", "Archivo", "Hoja", "Fila")
+    avisos_exportados = list(libro["Avisos 1"].iter_rows(values_only=True))
+    assert {fila[4] for fila in avisos_exportados[1:] if fila[1] == nombre} == {
+        "id_acta", "fecha_acta", "estado_acta",
+    }
+
+
+def test_api_subir_limpia_archivo_si_falla_la_reimportacion(tmp_path, monkeypatch):
+    import pytest
+
+    c = _cliente(tmp_path)
+    catalogo = c.app.state.servicio.cat
+
+    def fallar_importacion():
+        raise RuntimeError("error inesperado de importación")
+
+    monkeypatch.setattr(catalogo, "importar", fallar_importacion)
+    with pytest.raises(RuntimeError, match="error inesperado"):
+        c.post(
+            "/api/subir",
+            data={"area": "fiscalizacion"},
+            files={"archivo": ("actas.csv", b"id_acta,id_pedido\n", "text/csv")},
+        )
+    assert list(catalogo.subidos_dir.glob("fiscalizacion_*.csv")) == []

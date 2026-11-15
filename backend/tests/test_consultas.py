@@ -9,7 +9,7 @@ import pytest
 from app.agents.router import extraer_ids
 from app.ingestion.loader import Catalogo
 from app.security import guard
-from app.tools.queries import ArgumentoInvalido, Contexto, ejecutar
+from app.tools.queries import ArgumentoInvalido, Contexto, contar_incidencias, ejecutar, incidencias
 from conftest import REF, SYNTH, crear_config, raw, validas_finanzas
 
 
@@ -22,7 +22,7 @@ def ejecutar_tool(servicio, nombre, args=None, perfil="analista"):
 
 
 # ---------------------------------------------------------------- importación
-def test_cuatro_excel_con_encabezados_y_relaciones():
+def test_archivos_base_con_encabezados_y_relaciones():
     for area in ("finanzas", "operaciones", "logistica", "atencion"):
         assert (SYNTH / f"{area}.xlsx").exists()
     pedidos_ops = {o["id_pedido"] for o in raw("operaciones")}
@@ -40,6 +40,59 @@ def test_importacion_cuenta_validas_y_rechazadas(servicio):
     assert fin["validas"] == len(validas_finanzas())
     causas = {r["fila"]: r["causa"] for r in servicio.cat.rechazos()}
     assert any("duplicado" in c for c in causas.values()) and any("importe no numérico" in c for c in causas.values())
+
+
+def test_importa_diez_areas_y_consulta_las_nuevas(servicio):
+    assert len(servicio.cat.cargas) == 10
+    assert all(c["estado"] == "ok" for c in servicio.cat.cargas)
+    assert servicio.cat.consultar("SELECT COUNT(*) AS n FROM fiscalizacion")[0]["n"] == 60
+
+    r = servicio.responder("¿Qué registros tiene Fiscalización para PE-015?")
+    assert r["herramientas"][0]["herramienta"] == "consultar_area"
+    assert r["fuentes"][0]["area"] == "fiscalizacion"
+    assert r["fuentes"][0]["archivo"] == "fiscalizacion.xlsx"
+    assert "Encontré" in r["texto"]
+    por_multa = servicio.responder("¿Qué registra Fiscalización para la multa MU-000015?")
+    assert por_multa["fuentes"] and por_multa["fuentes"][0]["id"] == "AC-000015"
+
+
+def test_consulta_generica_respeta_permisos_de_las_diez_areas(servicio):
+    permitido = servicio.responder("¿Qué registros tiene Fiscalización para PE-015?", perfil="fiscalizacion")
+    denegado = servicio.responder("¿Qué registros tiene Fiscalización para PE-015?", perfil="recaudacion")
+    assert permitido["fuentes"] and permitido["fuentes"][0]["area"] == "fiscalizacion"
+    assert denegado["denegado"] and denegado["fuentes"] == []
+
+
+def test_sugerencias_de_carga_y_calidad_se_resuelven_con_datos_importados(servicio):
+    resumen = servicio.responder("¿Cuántas filas rechazadas y cuántos avisos hay por área?")
+    assert resumen["intencion"] == "consulta_calidad"
+    assert resumen["herramientas"][0]["herramienta"] == "consultar_calidad"
+    assert resumen["datos"][0]["datos"]["rechazadas"] == sum(c["rechazadas"] for c in servicio.cat.cargas)
+    assert resumen["datos"][0]["datos"]["avisos"] == sum(c["avisos"] for c in servicio.cat.cargas)
+    assert resumen["tablas"][0]["titulo"] == "Resumen de calidad por área"
+
+    invalidos = servicio.responder("¿Qué valores no válidos se detectaron en Finanzas?", perfil="finanzas")
+    assert invalidos["herramientas"][0]["argumentos"] == {"tipo": "invalidos", "area": "finanzas"}
+    assert invalidos["datos"][0]["datos"]["total"] > 0
+    assert any("N/D" in str(valor) for tabla_ in invalidos["tablas"] for fila in tabla_["filas"] for valor in fila)
+
+    vacios = servicio.responder("¿Qué campos vacíos aparecen como avisos?")
+    assert vacios["herramientas"][0]["argumentos"]["tipo"] == "vacios"
+
+    avisos_area = servicio.responder("¿Qué avisos hay en el área Finanzas?", perfil="finanzas")
+    assert avisos_area["herramientas"][0]["argumentos"] == {"tipo": "avisos", "area": "finanzas"}
+
+    archivos = servicio.responder("¿Qué archivos se cargaron y cuántas filas válidas tienen?")
+    assert archivos["herramientas"][0]["argumentos"] == {"tipo": "cargas"}
+
+
+def test_consultas_calidad_respetan_perfil_de_area(servicio):
+    respuesta = servicio.responder("¿Qué valores no válidos se detectaron?", perfil="finanzas")
+    assert respuesta["denegado"] and respuesta["tablas"] == []
+
+
+def test_conteo_sql_de_incidencias_coincide_con_el_detalle(servicio):
+    assert contar_incidencias(servicio.ctx) == len(incidencias(servicio.ctx))
 
 
 # ----------------------------------------------------- una sola área (exactitud)
@@ -121,9 +174,9 @@ def test_causa_del_atraso_no_se_inventa(servicio):
     assert r["herramientas"][0]["herramienta"] == "consultar_pedido"
 
 
-def test_notificacion_no_verificable(servicio):
-    r = preguntar(servicio, "¿Se notificó al cliente?")
-    assert "No puedo verificar" in r["texto"] and r["fuentes"] == []
+def test_notificaciones_se_consultan_en_su_area(servicio):
+    r = preguntar(servicio, "¿Se notificó el pedido PE-015?")
+    assert r["fuentes"] and r["fuentes"][0]["area"] == "notificaciones"
 
 
 def test_no_calcula_intereses_sin_regla(servicio):
@@ -265,4 +318,4 @@ def test_registro_de_consultas_no_guarda_el_texto_de_la_pregunta(servicio):
     eventos = [json.loads(l) for l in log]
     consulta = [e for e in eventos if e["tipo"] == "consulta"][-1]
     assert consulta["intencion"] == "facturas_cliente" and "CL-001" not in json.dumps(consulta)
-    assert sum(e["tipo"] == "carga" for e in eventos) == 4
+    assert sum(e["tipo"] == "carga" for e in eventos) == 10

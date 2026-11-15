@@ -14,11 +14,12 @@ from decimal import Decimal
 from typing import Any, Callable
 
 from ..ingestion.loader import Catalogo
-from ..ingestion.schemas import AREAS, ESQUEMAS
+from ..ingestion.schemas import AREAS, ESQUEMAS, NOMBRES_AREAS
 from ..security import guard
 
 ID_CLIENTE = r"CL-\d{1,6}"
 ID_PEDIDO = r"PE-\d{1,6}"
+ID_MULTA = r"MU-\d{1,8}"
 
 
 class ArgumentoInvalido(ValueError):
@@ -98,6 +99,46 @@ def _rechazos_relacionados(ctx: Contexto, area: str, ids: list[str]) -> list[str
 
 
 # ---------------------------------------------------------------- incidencias
+def contar_incidencias(ctx: Contexto) -> int:
+    """Cuenta incidencias en DuckDB sin materializar las tablas completas en Python."""
+    consulta = """
+        SELECT
+            (SELECT COUNT(*) FROM operaciones o
+             WHERE o.estado_operativo = 'completado'
+               AND (NOT EXISTS (SELECT 1 FROM logistica e WHERE e.id_pedido = o.id_pedido)
+                    OR NOT EXISTS (SELECT 1 FROM logistica e
+                                   WHERE e.id_pedido = o.id_pedido AND e.estado_entrega = 'entregado')))
+          + (SELECT COUNT(*) FROM logistica e
+             LEFT JOIN operaciones o ON o.id_pedido = e.id_pedido
+             WHERE o.id_pedido IS NULL)
+          + (SELECT COUNT(*) FROM logistica e
+             JOIN operaciones o ON o.id_pedido = e.id_pedido
+             WHERE e.estado_entrega = 'entregado' AND e.fecha_real IS NULL)
+          + (SELECT COUNT(*) FROM logistica e
+             JOIN operaciones o ON o.id_pedido = e.id_pedido
+             WHERE e.estado_entrega = 'entregado' AND o.estado_operativo <> 'completado')
+          + (SELECT COALESCE(SUM(CASE
+                 WHEN f.estado_pago = 'pagado' AND f.saldo > 0 THEN 1
+                 WHEN f.estado_pago = 'pendiente' AND f.saldo = 0 THEN 1
+                 WHEN f.saldo > f.importe THEN 1 ELSE 0 END), 0)
+             FROM finanzas f)
+          + (SELECT COUNT(*) FROM finanzas f WHERE f.fecha_vencimiento IS NULL)
+          + (SELECT COUNT(*) FROM finanzas f
+             LEFT JOIN operaciones o ON o.id_pedido = f.id_pedido
+             WHERE o.id_pedido IS NULL)
+          + (SELECT COUNT(*) FROM finanzas f
+             JOIN operaciones o ON o.id_pedido = f.id_pedido
+             WHERE o.id_cliente <> f.id_cliente)
+          + (SELECT COUNT(*) FROM atencion k
+             LEFT JOIN operaciones o ON o.id_pedido = k.id_pedido
+             WHERE o.id_pedido IS NULL)
+          + (SELECT COUNT(*) FROM atencion k
+             JOIN operaciones o ON o.id_pedido = k.id_pedido
+             WHERE o.id_cliente <> k.id_cliente) AS total
+    """
+    return ctx.q(consulta)[0]["total"]
+
+
 def incidencias(ctx: Contexto) -> list[dict]:
     """Contradicciones, datos faltantes y referencias rotas entre áreas, con su procedencia."""
     t = {a: ctx.q(f"SELECT * FROM {a} ORDER BY _fila") for a in AREAS}
@@ -228,7 +269,7 @@ def consultar_pedido(ctx: Contexto, id_pedido: str) -> Resultado:
     r = Resultado("consultar_pedido", args, "")
     r.advertencias += _rechazos_relacionados(ctx, "finanzas", [id_pedido])
     if not (o or es or fs or ks):
-        r.texto = f"No encontré constancia de {id_pedido} en ninguna de las cuatro áreas importadas."
+        r.texto = f"No encontré constancia de {id_pedido} en las áreas base de Operaciones, Logística, Finanzas y Atención."
         r.datos = {"encontrado": False}
         return r
     for area, filas, clave in (("operaciones", o, "id_pedido"), ("logistica", es, "id_entrega"), ("finanzas", fs, "id_factura"), ("atencion", ks, "id_ticket")):
@@ -392,13 +433,88 @@ def listar_inconsistencias(ctx: Contexto) -> Resultado:
     return r
 
 
+def consultar_calidad(ctx: Contexto, tipo: str = "resumen", area: str | None = None) -> Resultado:
+    """Consulta conteos de carga y detalles de rechazos o avisos, limitando las filas devueltas."""
+    filtros = ["area = ?"] if area else []
+    params: list[str] = [area] if area else []
+    where = f" WHERE {' AND '.join(filtros)}" if filtros else ""
+    r = Resultado("consultar_calidad", {"tipo": tipo, "area": area}, "")
+
+    if tipo == "cargas":
+        cargas = [c for c in ctx.cat.cargas if area is None or c["area"] == area]
+        filas = [[NOMBRES_AREAS[c["area"]], c["estado"], c["filas_leidas"], c["validas"],
+                  c["rechazadas"], c["avisos"], ", ".join(f["archivo"] for f in c.get("archivos", []))]
+                 for c in cargas]
+        r.tablas.append(tabla("Estado de las cargas", ["Área", "Estado", "Leídas", "Válidas",
+                                                         "Rechazadas", "Avisos", "Archivos"], filas,
+                              derecha=(2, 3, 4, 5)))
+        r.datos = {"areas": len(cargas), "registros_leidos": sum(c["filas_leidas"] for c in cargas),
+                   "validas": sum(c["validas"] for c in cargas), "rechazadas": sum(c["rechazadas"] for c in cargas),
+                   "avisos": sum(c["avisos"] for c in cargas)}
+        r.texto = f"Hay {len(cargas)} área(s) en la vista de cargas: {r.datos['validas']} filas válidas, "
+        r.texto += f"{r.datos['rechazadas']} rechazadas y {r.datos['avisos']} avisos."
+        return r
+
+    if tipo == "resumen":
+        cargas = {c["area"]: c for c in ctx.cat.cargas if area is None or c["area"] == area}
+        conteos = {}
+        for tabla_calidad in ("_rechazos", "_avisos"):
+            consulta = f"SELECT area, COUNT(*) AS n FROM {tabla_calidad}{where} GROUP BY area"
+            conteos[tabla_calidad] = {f["area"]: f["n"] for f in ctx.q(consulta, params)}
+        areas = [area] if area else list(AREAS)
+        filas = [[NOMBRES_AREAS[a], cargas.get(a, {}).get("filas_leidas", 0),
+                  cargas.get(a, {}).get("validas", 0), conteos["_rechazos"].get(a, 0),
+                  conteos["_avisos"].get(a, 0)] for a in areas]
+        r.tablas.append(tabla("Resumen de calidad por área", ["Área", "Leídas", "Válidas", "Rechazadas", "Avisos"],
+                              filas, derecha=(1, 2, 3, 4)))
+        r.datos = {"areas": len(filas), "rechazadas": sum(f[3] for f in filas), "avisos": sum(f[4] for f in filas)}
+        r.texto = f"Resumen de {NOMBRES_AREAS[area] if area else 'las áreas'}: {r.datos['rechazadas']} filas rechazadas y {r.datos['avisos']} avisos."
+        return r
+
+    tabla_calidad = "_rechazos" if tipo == "rechazos" else "_avisos"
+    if tipo == "rechazos":
+        consulta = (f"SELECT area, archivo, hoja, fila, causa, valores FROM {tabla_calidad}{where} "
+                    "ORDER BY archivo, fila LIMIT 100")
+        columnas = ["Área", "Archivo", "Hoja", "Fila", "Causa", "Valores originales"]
+        cuenta = f"SELECT COUNT(*) AS n FROM {tabla_calidad}{where}"
+        titulo = "Filas rechazadas"
+    else:
+        condicion, parametro = {
+            "avisos": (None, None),
+            "invalidos": ("aviso LIKE ?", "valor no válido:%"),
+            "vacios": ("aviso LIKE ?", "campo vacío:%"),
+        }[tipo]
+        if condicion:
+            filtros.append(condicion)
+            params.append(parametro)
+        where = f" WHERE {' AND '.join(filtros)}" if filtros else ""
+        consulta = (f"SELECT area, archivo, hoja, fila, columna, valor, aviso FROM _avisos{where} "
+                    "ORDER BY archivo, fila LIMIT 100")
+        columnas = ["Área", "Archivo", "Hoja", "Fila", "Columna", "Valor original", "Aviso"]
+        cuenta = f"SELECT COUNT(*) AS n FROM _avisos{where}"
+        titulo = {"avisos": "Avisos de calidad", "invalidos": "Valores no válidos", "vacios": "Campos vacíos"}[tipo]
+
+    total = ctx.q(cuenta, params)[0]["n"]
+    filas = ctx.q(consulta, params)
+    r.tablas.append(tabla(titulo, columnas, [[NOMBRES_AREAS[f["area"]], *[f[k] for k in f if k != "area"]]
+                                                for f in filas]))
+    r.datos = {"tipo": tipo, "area": area, "total": total, "mostradas": len(filas)}
+    nombre = NOMBRES_AREAS[area] if area else "todas las áreas"
+    r.texto = f"Encontré {total} {titulo.lower()} en {nombre}."
+    if total > len(filas):
+        r.texto += f" Muestro las primeras {len(filas)} filas; usa «Carga y calidad» para ver o descargar el listado completo."
+    return r
+
+
 def ver_fuente(ctx: Contexto, archivo: str, hoja: str, fila: int) -> Resultado:
     args = {"archivo": archivo, "hoja": hoja, "fila": fila}
-    esq = next((e for e in ESQUEMAS.values() if e.archivo == archivo), None)
-    if esq is None or hoja != esq.hoja:
+    area = ctx.cat.area_del_archivo(archivo)
+    esq = ESQUEMAS.get(area) if area else None
+    if esq is None:
         raise ArgumentoInvalido("Archivo u hoja no reconocidos.")
     r = Resultado("ver_fuente", args, "")
-    filas = ctx.q(f"SELECT * FROM {esq.area} WHERE _fila = ?", [fila])
+    filas = ctx.q(f"SELECT * FROM {esq.area} WHERE _archivo = ? AND _hoja = ? AND _fila = ?",
+                  [archivo, hoja, fila])
     if filas:
         x = filas[0]
         r.tablas.append(tabla(f"{archivo} · {hoja} · fila {fila}", ["Campo", "Valor"],
@@ -407,7 +523,7 @@ def ver_fuente(ctx: Contexto, archivo: str, hoja: str, fila: int) -> Resultado:
         r.texto = f"Fila {fila} de {archivo} (hoja {hoja}), importada como registro válido (versión {x['_version']})."
         r.datos = {"valida": True, "campos": {c.nombre: _mostrar(x[c.nombre]) for c in esq.columnas}}
         return r
-    rech = ctx.q("SELECT * FROM _rechazos WHERE archivo = ? AND fila = ?", [archivo, fila])
+    rech = ctx.q("SELECT * FROM _rechazos WHERE archivo = ? AND hoja = ? AND fila = ?", [archivo, hoja, fila])
     if rech:
         crudo = json.loads(rech[0]["valores"])
         r.tablas.append(tabla(f"{archivo} · {hoja} · fila {fila} (RECHAZADA)", ["Campo", "Valor original"], [[k, str(v)] for k, v in crudo.items()]))
@@ -415,6 +531,36 @@ def ver_fuente(ctx: Contexto, archivo: str, hoja: str, fila: int) -> Resultado:
         r.datos = {"valida": False, "causa": rech[0]["causa"]}
         return r
     r.texto = f"No encontré la fila {fila} en {archivo}."
+    return r
+
+
+def consultar_area(ctx: Contexto, area: str, id_pedido: str | None = None,
+                   id_multa: str | None = None) -> Resultado:
+    """Consulta una sola área por pedido o multa y conserva las referencias a las filas fuente."""
+    esq = ESQUEMAS[area]
+    filtros, params = [], []
+    if id_pedido:
+        filtros.append("id_pedido = ?")
+        params.append(id_pedido)
+    if id_multa:
+        if "id_multa" not in {c.nombre for c in esq.columnas}:
+            raise ArgumentoInvalido(f"{NOMBRES_AREAS[area]} no contiene identificadores de multa.")
+        filtros.append("id_multa = ?")
+        params.append(id_multa)
+    if not filtros:
+        raise ArgumentoInvalido("Indica un id_pedido o id_multa para consultar el área.")
+    identidad = id_multa or id_pedido
+    filas = ctx.q(f"SELECT * FROM {esq.area} WHERE {' AND '.join(filtros)} ORDER BY _fila LIMIT 100", params)
+    r = Resultado("consultar_area", {"area": area, "id_pedido": id_pedido, "id_multa": id_multa}, "")
+    if not filas:
+        r.texto = f"No encontré registros en {NOMBRES_AREAS[area]} para {identidad}."
+        return r
+    r.tablas.append(tabla(f"{NOMBRES_AREAS[area]} · {identidad}",
+                          [c.nombre for c in esq.columnas],
+                          [[_mostrar(f[c.nombre]) for c in esq.columnas] for f in filas]))
+    r.agregar_fuentes(area, filas, esq.clave)
+    r.datos = {"area": area, "id_pedido": id_pedido, "id_multa": id_multa, "registros": len(filas)}
+    r.texto = f"Encontré {len(filas)} registro(s) en {NOMBRES_AREAS[area]} para {identidad}."
     return r
 
 
@@ -454,9 +600,17 @@ HERRAMIENTAS: dict[str, Herramienta] = {h.nombre: h for h in (
     Herramienta("clientes_deuda_y_reclamo", "Clientes con facturas con saldo y reclamos abiertos a la vez.", ("finanzas", "atencion"), {}, (), clientes_deuda_y_reclamo),
     Herramienta("operaciones_vs_logistica", "Pedidos Completados en Operaciones que no figuran Entregados en Logística.", ("operaciones", "logistica"), {}, (), operaciones_vs_logistica),
     Herramienta("listar_inconsistencias", "Contradicciones, datos faltantes y referencias rotas entre áreas.", AREAS, {}, (), listar_inconsistencias),
-    Herramienta("ver_fuente", "Fila original de un Excel (archivo, hoja y número de fila).", (),
-                {"archivo": {"type": "string", "enum": [e.archivo for e in ESQUEMAS.values()]},
+    Herramienta("consultar_calidad", "Resumen de cargas y consulta de filas rechazadas, valores inválidos o avisos de calidad.",
+                (), {"tipo": {"type": "string", "enum": ["resumen", "cargas", "rechazos", "avisos", "invalidos", "vacios"]},
+                     "area": {"type": "string", "enum": list(AREAS)}}, (), consultar_calidad),
+    Herramienta("ver_fuente", "Fila original de un Excel o CSV (archivo, hoja y número de fila).", (),
+                {"archivo": {"type": "string"},
                  "hoja": {"type": "string"}, "fila": {"type": "integer", "minimum": 2}}, ("archivo", "hoja", "fila"), ver_fuente),
+    Herramienta("consultar_area", "Consulta los registros de un área por identificador de pedido o multa.", (),
+                {"area": {"type": "string", "enum": list(AREAS)}, "id_pedido": _P_PEDIDO,
+                 "id_multa": {"type": "string", "pattern": f"^{ID_MULTA}$",
+                              "description": "Identificador ficticio de multa, p. ej. MU-000015"}},
+                ("area",), consultar_area),
 )}
 
 
@@ -498,7 +652,12 @@ def ejecutar(ctx: Contexto, perfil: str, nombre: str, args: dict | None = None) 
         raise HerramientaDesconocida(nombre)
     limpio = validar_argumentos(h, args or {})
     if nombre == "ver_fuente":
-        areas = tuple(e.area for e in ESQUEMAS.values() if e.archivo == limpio["archivo"])
+        area = ctx.cat.area_del_archivo(limpio["archivo"])
+        areas = (area,) if area else ()
+    elif nombre == "consultar_area":
+        areas = (limpio["area"],)
+    elif nombre == "consultar_calidad":
+        areas = (limpio["area"],) if limpio.get("area") else AREAS
     else:
         areas = h.areas
     try:

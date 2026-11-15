@@ -23,11 +23,22 @@ Una sola área: (1) facturas pendientes de CL-001 → 2 facturas, S/ 3,626.27; (
 
 Entre áreas: (4) ¿PE-015 entregado y pagado?; (5) clientes con facturas pendientes y reclamos abiertos → 10; (6) completados en Operaciones sin entregar en Logística → PE-040; (7) inconsistencias → 7.
 
-Información incompleta: (8) ¿por qué se atrasó PE-030? → no consta; (9) ¿se notificó al cliente? → no verificable; (10) interés de PE-015 → no se calcula, se muestra el importe registrado.
+Información incompleta: (8) ¿por qué se atrasó PE-030? → no consta; (9) ¿se notificó PE-015? → consulta Notificaciones con fuente; (10) interés de PE-015 → no se calcula, se muestra el importe registrado.
 
 Seguridad: (11) perfil Logística pregunta por facturas → denegado; (12) mención de DNI → bloqueada; (13) id con SQL → rechazado; (14) instrucción en celda → solo dato; (15) pregunta fuera de alcance → «no pude relacionar», sin datos.
 
 Los valores numéricos de las filas 1, 3, 5 y 7 corresponden a la ejecución de la versión entregada; si cambias el generador, las pruebas automáticas (que los recalculan desde los Excel) seguirán siendo la referencia.
+
+## Diez áreas y volumen
+
+Las áreas nuevas Fiscalización, Recaudación, Notificaciones, Impugnaciones, Convenios y Documentos contienen 60 registros sintéticos cada una y diferentes columnas. Están enlazadas mediante identificadores ficticios `PE-###`, `CL-###` y `MU-######`. Se consultan por área e identificador; no modelan las reglas ni los SI reales.
+
+La ingesta por lotes se puede probar con 200.000 o 1.000.000 de filas en una de las áreas:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_scale_test.py --area fiscalizacion --rows 200000
+.\.venv\Scripts\python.exe scripts\run_scale_test.py --area recaudacion --rows 1000000
+```
 
 ## Ejecución
 
@@ -35,4 +46,4 @@ Los valores numéricos de las filas 1, 3, 5 y 7 corresponden a la ejecución de 
 .\scripts\run_tests.ps1
 ```
 
-Última ejecución en esta máquina: **38 passed** en ≈10 s (Python 3.14.3, pytest 9.2.0).
+La versión previa de este registro tenía 38 pruebas. Consulta el README para los resultados actuales de regresión y de carga.
