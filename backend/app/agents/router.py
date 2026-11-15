@@ -11,7 +11,13 @@ from dataclasses import dataclass, field
 from ..ingestion.loader import sin_acentos
 
 _ID = re.compile(r"\b(pe|cl)\s*-?\s*(\d{1,4})\b")
+_ID_MULTA = re.compile(r"\bmu\s*-?\s*(\d{1,8})\b")
 SUGERENCIAS = [
+    "¿Cuántas filas rechazadas y cuántos avisos hay por área?",
+    "¿Qué filas se rechazaron durante la carga y por qué?",
+    "¿Qué valores no válidos se detectaron?",
+    "¿Qué campos vacíos aparecen como avisos?",
+    "¿Qué archivos se cargaron y cuántas filas válidas tienen?",
     "¿Cuál es el estado del pedido PE-015?",
     "¿Está entregado y pagado?",
     "¿Qué facturas tiene pendientes el cliente CL-001?",
@@ -22,6 +28,8 @@ SUGERENCIAS = [
     "¿Por qué se atrasó el pedido PE-030?",
     "¿Se notificó al cliente?",
     "¿Cuánto interés corresponde pagar por PE-015?",
+    "¿Qué registros tiene Fiscalización para PE-015?",
+    "¿Se notificó el pedido PE-015?",
 ]
 
 
@@ -47,17 +55,57 @@ def extraer_ids(pregunta: str) -> tuple[list[str], list[str]]:
 def interpretar(pregunta: str, contexto: dict | None = None) -> Plan:
     n = sin_acentos(pregunta.lower())
     pedidos, clientes = extraer_ids(pregunta)
+    multas = [f"MU-{int(numero):06d}" for numero in _ID_MULTA.findall(n)]
     notas: list[str] = []
     contexto = contexto or {}
 
     def tiene(*palabras: str) -> bool:
         return any(p in n for p in palabras)
 
+    areas_mencionadas = (
+        (("finanzas",), "finanzas"), (("operaciones",), "operaciones"),
+        (("logistica",), "logistica"), (("atencion", "atención"), "atencion"),
+        (("fiscalizacion", "fiscalización"), "fiscalizacion"),
+        (("recaudacion", "recaudación"), "recaudacion"),
+        (("notificacion", "notificación"), "notificaciones"),
+        (("impugnacion", "impugnación"), "impugnaciones"),
+        (("convenio",), "convenios"), (("documento",), "documentos"),
+    )
+    area = next((clave for terminos, clave in areas_mencionadas if tiene(*terminos)), None)
+    if (tiene("rechaz", "aviso", "carga", "import", "calidad", "invalido", "no valido", "vacio")
+            and not tiene("inconsisten", "contradic", "discrepan", "incongruen")):
+        if tiene("archivo", "fuente") and tiene("carg", "import"):
+            tipo_calidad = "cargas"
+        elif (tiene("por area", "por cada area", "resumen", "totales")
+              or (tiene("cuantos", "cuantas") and tiene("rechaz", "aviso"))):
+            tipo_calidad = "resumen"
+        elif tiene("invalido", "no valido", "invalid"):
+            tipo_calidad = "invalidos"
+        elif tiene("vacio", "vacia", "vacios", "vacias"):
+            tipo_calidad = "vacios"
+        elif tiene("rechaz"):
+            tipo_calidad = "rechazos"
+        elif tiene("aviso"):
+            tipo_calidad = "avisos"
+        elif tiene("archivo", "fuente", "carga", "import"):
+            tipo_calidad = "cargas"
+        else:
+            tipo_calidad = "resumen"
+        argumentos = {"tipo": tipo_calidad}
+        if area:
+            argumentos["area"] = area
+        return Plan("consulta_calidad", [("consultar_calidad", argumentos)])
+
     if tiene("notific"):
-        return Plan("no_verificable", mensaje=("No puedo verificar si se notificó al cliente: ninguna de las cuatro fuentes "
-                                               "(Finanzas, Operaciones, Logística, Atención) registra notificaciones. "
-                                               "No consta, y tampoco puedo afirmar que no ocurrió."), pedido=pedidos[0] if pedidos else None)
-    if tiene("interes", "mora", "multa", "recargo"):
+        if pedidos:
+            return Plan("consulta_notificaciones",
+                        [("consultar_area", {"area": "notificaciones", "id_pedido": pedidos[0]})],
+                        pedido=pedidos[0])
+        if multas:
+            return Plan("consulta_notificaciones",
+                        [("consultar_area", {"area": "notificaciones", "id_multa": multas[0]})])
+        return Plan("consulta_notificaciones", mensaje="Indica el identificador de pedido (por ejemplo PE-015) para revisar las notificaciones registradas.")
+    if tiene("interes", "mora", "recargo"):
         if pedidos or clientes:
             llamada = ("consultar_facturas", {"id_pedido": pedidos[0]} if pedidos else {"id_cliente": clientes[0]})
             return Plan("interes_no_calculable", [llamada], notas=[
@@ -78,10 +126,16 @@ def interpretar(pregunta: str, contexto: dict | None = None) -> Plan:
         return Plan("cruce_deuda_reclamo", [("clientes_deuda_y_reclamo", {})])
     if tiene("completad") and tiene("logistica", "entregad") and not pedidos:
         return Plan("cruce_ops_logistica", [("operaciones_vs_logistica", {})])
+
     if tiene("inconsisten", "contradic", "calidad", "discrepan", "incongruen"):
         return Plan("inconsistencias", [("listar_inconsistencias", {})])
     if tiene("atrasad", "retras", "demorad") and not pedidos and not clientes and (tiene("entregas", "pedidos") or not contexto.get("ultimo_pedido")):
         return Plan("entregas_atrasadas", [("consultar_entregas", {"solo_atrasadas": True})])
+
+    if area and (pedidos or multas):
+        identificador = {"id_multa": multas[0]} if multas else {"id_pedido": pedidos[0]}
+        return Plan("consulta_area", [("consultar_area", {"area": area, **identificador})],
+                    pedido=pedidos[0] if pedidos else None)
 
     if pedidos:
         if tiene("factura") and not tiene("entreg", "pagad", "estado", "pago"):

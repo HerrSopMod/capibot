@@ -1,13 +1,13 @@
 """Control de acceso por perfil y filtros de preguntas sensibles.
 
-En la demo los perfiles se eligen desde la interfaz (no hay autenticación real).
-En una implantación real, el perfil debe salir de un login y de permisos por registro.
+El login de la demo autentica una sola cuenta compartida; los perfiles de área aún se eligen
+desde la interfaz y no sustituyen autorización por usuario ni permisos por registro.
 """
 from __future__ import annotations
 
 import re
 
-from ..ingestion.schemas import AREAS
+from ..ingestion.schemas import AREAS, NOMBRES_AREAS
 
 PERFILES: dict[str, tuple[str, frozenset[str]]] = {
     "analista": ("Analista (todas las áreas)", frozenset(AREAS)),
@@ -16,6 +16,8 @@ PERFILES: dict[str, tuple[str, frozenset[str]]] = {
     "logistica": ("Logística", frozenset({"logistica"})),
     "atencion": ("Atención al cliente", frozenset({"atencion"})),
 }
+PERFILES.update({area: (NOMBRES_AREAS[area], frozenset({area}))
+                 for area in AREAS if area not in PERFILES})
 
 _SENSIBLE = re.compile(r"\b(dni|contrase[ñn]a|password|clave|token|tarjeta|cvv|pin)\b", re.IGNORECASE)
 

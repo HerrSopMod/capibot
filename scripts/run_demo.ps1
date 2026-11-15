@@ -8,7 +8,9 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
     python -m venv .venv
     & .\.venv\Scripts\python.exe -m pip install -q -r requirements.txt
 }
-if (-not (Test-Path "data\synthetic\finanzas.xlsx")) {
+$areas = @("finanzas", "operaciones", "logistica", "atencion", "fiscalizacion", "recaudacion", "notificaciones", "impugnaciones", "convenios", "documentos")
+$faltan = $areas | Where-Object { -not (Test-Path "data\synthetic\$($_).xlsx") }
+if ($faltan) {
     & .\.venv\Scripts\python.exe scripts\generate_demo_data.py
 }
 Write-Host "Abre http://127.0.0.1:8000  (Ctrl+C para detener)"

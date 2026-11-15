@@ -16,7 +16,11 @@ from app.config import Config  # noqa: E402
 from app.ingestion.loader import Catalogo  # noqa: E402
 
 REF = date(2026, 10, 31)
-HOJAS = {"finanzas": "Facturas", "operaciones": "Pedidos", "logistica": "Entregas", "atencion": "Tickets"}
+HOJAS = {
+    "finanzas": "Facturas", "operaciones": "Pedidos", "logistica": "Entregas", "atencion": "Tickets",
+    "fiscalizacion": "Actas", "recaudacion": "Pagos", "notificaciones": "Envios",
+    "impugnaciones": "Recursos", "convenios": "Convenios", "documentos": "Documentos",
+}
 SYNTH = RAIZ / "data" / "synthetic"
 
 
