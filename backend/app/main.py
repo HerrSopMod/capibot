@@ -9,7 +9,9 @@ import secrets
 import tempfile
 import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from starlette.background import BackgroundTask
@@ -20,8 +22,12 @@ from pydantic import BaseModel, Field
 from .agents.router import SUGERENCIAS
 from .agents.servicio import Servicio
 from .config import RAIZ, Config, cargar_config
-from .ingestion.loader import Catalogo
-from .ingestion.schemas import ESQUEMAS
+from .ingestion.loader import Catalogo, ErrorImportacion, homologar_encabezados
+from .ingestion.schemas import AREAS, ESQUEMAS
+from .integration.multas import ConsultaMultas
+from .integration.sqlite_source import SQLiteReadOnlyConnector, crear_sistemas_demo
+from .integration.sync import Sincronizador
+from .integration.tracking import SeguimientoInconsistencias
 from .security import guard
 from .tools.queries import ArgumentoInvalido, contar_incidencias, ejecutar
 
@@ -40,12 +46,51 @@ class LoginIn(BaseModel):
     contrasena: str = Field(min_length=1, max_length=256)
 
 
+class ColumnasIn(BaseModel):
+    area: str
+    columnas: list[str]
+
+
+class EstadoInconsistenciaIn(BaseModel):
+    estado: Literal["pendiente", "en_revision", "resuelta"]
+    observacion: str = Field(default="", max_length=1000)
+
+
 def crear_app(cfg: Config | None = None) -> FastAPI:
     cfg = cfg or cargar_config()
     catalogo = Catalogo(cfg.datos_dir, cfg.generado_dir, cfg.subidos_dir)
-    servicio = Servicio(cfg, catalogo)
-    app = FastAPI(title="Capibot (POC académica)", docs_url="/api/docs", openapi_url="/api/openapi.json")
+    sqlite_path = cfg.generado_dir / "sistemas_simulados.sqlite3"
+    crear_sistemas_demo(sqlite_path)
+    consulta_multas = ConsultaMultas(SQLiteReadOnlyConnector(sqlite_path), catalogo)
+    sincronizador = Sincronizador(
+        cfg, catalogo, consulta_multas, sqlite_path, consulta_multas.sqlite,
+    )
+    consulta_multas.sincronizador = sincronizador
+    seguimiento = SeguimientoInconsistencias(cfg.generado_dir / "seguimiento.sqlite3")
+    seguimiento.actualizar_detecciones(consulta_multas.inconsistencias()["inconsistencias"])
+    sincronizador.al_actualizar = lambda: seguimiento.actualizar_detecciones(
+        consulta_multas.inconsistencias()["inconsistencias"]
+    )
+    servicio = Servicio(cfg, catalogo, consulta_multas=consulta_multas)
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        sincronizador.sincronizar()
+        sincronizador.iniciar()
+        try:
+            yield
+        finally:
+            sincronizador.detener()
+
+    app = FastAPI(
+        title="Capibot (POC académica)",
+        docs_url="/api/docs",
+        openapi_url="/api/openapi.json",
+        lifespan=lifespan,
+    )
     app.state.servicio = servicio
+    app.state.consulta_multas = consulta_multas
+    app.state.sincronizador = sincronizador
+    app.state.seguimiento_inconsistencias = seguimiento
     app.state.usuario = os.environ.get("APP_USERNAME", "admin")
     app.state.contrasena = os.environ.get("APP_PASSWORD", "12345678")
     app.state.session_secret = secrets.token_bytes(32)
@@ -105,7 +150,7 @@ def crear_app(cfg: Config | None = None) -> FastAPI:
     def estado(_: None = Depends(requiere_sesion)):
         cargas = catalogo.cargas
         return {
-            "entorno": "ENTORNO DEMO — DATOS FICTICIOS",
+            "entorno": "ENTORNO DE DEMOSTRACIÓN — REGISTROS DE EJEMPLO",
             "modo": servicio.modo(),
             "moneda": cfg.moneda, "zona_horaria": cfg.zona_horaria, "fecha_referencia": cfg.fecha_referencia.isoformat(),
             "cargas": cargas,
@@ -116,6 +161,93 @@ def crear_app(cfg: Config | None = None) -> FastAPI:
                 "inconsistencias_entre_areas": contar_incidencias(servicio.ctx) if all(c["estado"] == "ok" for c in cargas) else None,
                 "consultas_en_esta_sesion": servicio.n_consultas,
             },
+        }
+
+    def requiere_analista(perfil: str) -> None:
+        try:
+            guard.verificar(perfil, AREAS)
+        except guard.PerfilDesconocido:
+            raise HTTPException(status_code=400, detail="Perfil desconocido.")
+        except guard.AccesoDenegado:
+            raise HTTPException(
+                status_code=403,
+                detail="La consulta integrada requiere el perfil Analista.",
+            )
+
+    @app.get("/api/resumen")
+    def resumen_integrado(perfil: str = "analista", _: None = Depends(requiere_sesion)):
+        requiere_analista(perfil)
+        return consulta_multas.resumen()
+
+    @app.get("/api/multas/buscar")
+    def buscar_multas(tipo: Literal["documento", "id_expediente", "id_multa"], valor: str = Query(min_length=1, max_length=80),
+                      perfil: str = "analista", _: None = Depends(requiere_sesion)):
+        requiere_analista(perfil)
+        try:
+            return consulta_multas.buscar(tipo, valor)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/inconsistencias")
+    def inconsistencias_integradas(
+        estado: Literal["pendiente", "en_revision", "resuelta"] | None = None,
+        area: str | None = None,
+        tipo: str | None = None,
+        perfil: str = "analista",
+        _: None = Depends(requiere_sesion),
+    ):
+        requiere_analista(perfil)
+        detecciones = consulta_multas.inconsistencias()
+        seguimiento.actualizar_detecciones(detecciones["inconsistencias"])
+        resultado = seguimiento.listar(estado=estado, area=area, tipo=tipo)
+        resultado["por_tipo"] = detecciones["por_tipo"]
+        return resultado
+
+    @app.patch("/api/inconsistencias/{inconsistencia_id}")
+    def cambiar_estado_inconsistencia(
+        inconsistencia_id: str,
+        entrada: EstadoInconsistenciaIn,
+        perfil: str = "analista",
+        _: None = Depends(requiere_sesion),
+    ):
+        requiere_analista(perfil)
+        try:
+            actualizada = seguimiento.cambiar(inconsistencia_id, entrada.estado, entrada.observacion)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if actualizada is None:
+            raise HTTPException(status_code=404, detail="Inconsistencia no encontrada.")
+        return actualizada
+
+    @app.get("/api/fuentes")
+    def fuentes_integradas(perfil: str = "analista", _: None = Depends(requiere_sesion)):
+        requiere_analista(perfil)
+        return {"fuentes": sincronizador.fuentes()}
+
+    @app.post("/api/sincronizar")
+    def sincronizar_fuentes(_: None = Depends(requiere_sesion)):
+        resultado = sincronizador.sincronizar()
+        return resultado
+
+    @app.get("/api/sincronizaciones")
+    def historial_sincronizaciones(_: None = Depends(requiere_sesion)):
+        return {"historial": sincronizador.historial()}
+
+    @app.post("/api/columnas/analizar")
+    def analizar_columnas(entrada: ColumnasIn, _: None = Depends(requiere_sesion)):
+        esquema = ESQUEMAS.get(entrada.area)
+        if esquema is None:
+            raise HTTPException(status_code=400, detail="Selecciona un área válida.")
+        try:
+            asignados, extras = homologar_encabezados(entrada.area, entrada.columnas, esquema.columnas)
+        except ErrorImportacion as exc:
+            return {"estado": "revision_requerida", "asociaciones": [], "extras": [], "error": str(exc)}
+        return {
+            "estado": "ok",
+            "asociaciones": [{"origen": entrada.columnas[i], "campo": campo}
+                             for i, campo in sorted(asignados.items())],
+            "extras": [entrada.columnas[i] for i in extras],
+            "error": None,
         }
 
     @app.get("/api/perfiles")
@@ -135,8 +267,8 @@ def crear_app(cfg: Config | None = None) -> FastAPI:
 
     @app.post("/api/reimportar")
     def reimportar(_: None = Depends(requiere_sesion)):
-        """Vuelve a leer los Excel de la carpeta de fuentes (que nunca se modifican)."""
-        return {"cargas": catalogo.importar()}
+        sincronizacion = sincronizador.sincronizar()
+        return {"cargas": catalogo.cargas, "sincronizacion": sincronizacion}
 
     @app.post("/api/subir")
     async def subir(area: str = Form(...), archivo: UploadFile = File(...),
@@ -166,16 +298,16 @@ def crear_app(cfg: Config | None = None) -> FastAPI:
                 raise HTTPException(status_code=400, detail="El archivo está vacío.")
             temporal.replace(destino)
             try:
-                cargas = catalogo.importar()
+                sincronizacion = sincronizador.sincronizar()
             except Exception:
                 destino.unlink(missing_ok=True)
                 raise
-            carga = next(c for c in cargas if c["area"] == area)
+            carga = next(c for c in catalogo.cargas if c["area"] == area)
             if carga["estado"] != "ok":
                 destino.unlink(missing_ok=True)
-                catalogo.importar()
+                sincronizador.sincronizar()
                 raise HTTPException(status_code=400, detail=carga["error"])
-            return {"archivo": nombre_guardado, "carga": carga}
+            return {"archivo": nombre_guardado, "carga": carga, "sincronizacion": sincronizacion}
         finally:
             temporal.unlink(missing_ok=True)
             await archivo.close()

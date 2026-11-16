@@ -1,0 +1,17 @@
+{
+  "default": {
+    "estado_desconocido": "rechazo",
+    "columnas_desconocidas": "advertencia",
+    "opcionales_vacios": "advertencia"
+  },
+  "finanzas": {},
+  "operaciones": {},
+  "logistica": {},
+  "atencion": {},
+  "fiscalizacion": {},
+  "recaudacion": {},
+  "notificaciones": {},
+  "impugnaciones": {},
+  "convenios": {},
+  "documentos": {}
+}

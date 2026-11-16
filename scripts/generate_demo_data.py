@@ -1,4 +1,5 @@
-"""Genera los cuatro Excel sintéticos de la demo. Determinista: siempre produce los mismos datos.
+"""Genera los diez Excel y el CSV complementario sintéticos de la demo.
+Determinista: siempre produce los mismos datos.
 
 Uso: python scripts/generate_demo_data.py [carpeta_destino]
 
@@ -18,6 +19,7 @@ Casos deliberados (documentados en docs/casos-prueba.md):
 from __future__ import annotations
 
 import random
+import csv
 import sys
 from datetime import date, timedelta
 from decimal import Decimal
@@ -238,6 +240,15 @@ def escribir(destino: Path) -> None:
             ws.column_dimensions[get_column_letter(idx)].width = max(14, len(col) + 4)
         wb.save(destino / f"{area}.xlsx")
         print(f"{area}.xlsx: {len(spec['filas'])} filas")
+    with (destino / "multas_demo.csv").open("w", encoding="utf-8-sig", newline="") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerow(["DNI", "Nro Expediente", "Codigo de Multa", "Area Responsable",
+                           "Fecha Infraccion", "Situacion", "Monto", "Fecha Actualizacion"])
+        escritor.writerow(["90000001", "EX-900004", "MU-900004", "Fiscalizacion",
+                           "2026-04-04", "Pendiente", "150.25", "2026-04-05"])
+        escritor.writerow(["90000002", "EX-900005", "MU-900005", "Fiscalizacion",
+                           "2026-05-05", "Pagada", "80.00", "2026-05-07"])
+    print("multas_demo.csv: 2 filas")
 
 
 if __name__ == "__main__":

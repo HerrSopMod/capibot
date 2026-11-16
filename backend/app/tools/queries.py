@@ -517,11 +517,14 @@ def ver_fuente(ctx: Contexto, archivo: str, hoja: str, fila: int) -> Resultado:
                   [archivo, hoja, fila])
     if filas:
         x = filas[0]
+        extra = json.loads(x.get("extra_json") or "{}")
+        campos = {c.nombre: _mostrar(x[c.nombre]) for c in esq.columnas}
+        campos.update({str(k): _mostrar(v) for k, v in extra.items()})
         r.tablas.append(tabla(f"{archivo} · {hoja} · fila {fila}", ["Campo", "Valor"],
-                              [[c.nombre, _mostrar(x[c.nombre])] for c in esq.columnas]))
+                              [[nombre, valor] for nombre, valor in campos.items()]))
         r.fuentes.append(fuente(esq.area, x))
         r.texto = f"Fila {fila} de {archivo} (hoja {hoja}), importada como registro válido (versión {x['_version']})."
-        r.datos = {"valida": True, "campos": {c.nombre: _mostrar(x[c.nombre]) for c in esq.columnas}}
+        r.datos = {"valida": True, "campos": campos}
         return r
     rech = ctx.q("SELECT * FROM _rechazos WHERE archivo = ? AND hoja = ? AND fila = ?", [archivo, hoja, fila])
     if rech:

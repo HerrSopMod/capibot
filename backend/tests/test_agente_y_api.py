@@ -119,7 +119,7 @@ def test_api_arranca_con_login_en_modo_reglas(tmp_path):
     c = _cliente(tmp_path)
     e = c.get("/api/estado").json()
     assert e["modo"]["nombre"] == "Consultas por reglas" and e["modo"]["ia"] is False
-    assert e["entorno"] == "ENTORNO DEMO — DATOS FICTICIOS"
+    assert e["entorno"] == "ENTORNO DE DEMOSTRACIÓN — REGISTROS DE EJEMPLO"
     assert len(e["cargas"]) == 10 and all(x["estado"] == "ok" for x in e["cargas"])
     assert len(c.get("/api/perfiles").json()) == 11
     assert "Consulta" in c.get("/").text
@@ -160,7 +160,7 @@ def test_api_subir_csv_agrega_datos_y_reporta_vacios_en_avisos_y_rechazos(tmp_pa
     assert respuesta.status_code == 200, respuesta.text
     nombre = respuesta.json()["archivo"]
     carga = respuesta.json()["carga"]
-    assert carga["validas"] == 61 and carga["rechazadas"] == 1 and carga["avisos"] == 2
+    assert carga["validas"] == 61 and carga["rechazadas"] == 1 and carga["avisos"] == 3
     calidad = c.get("/api/calidad").json()
     assert any(r["archivo"] == nombre and "fecha_acta" in r["causa"] for r in calidad["rechazos"])
     assert any(r["archivo"] == nombre and r["aviso"] == "campo vacío: observacion" for r in calidad["avisos"])
@@ -240,7 +240,7 @@ def test_api_subir_limpia_archivo_si_falla_la_reimportacion(tmp_path, monkeypatc
     c = _cliente(tmp_path)
     catalogo = c.app.state.servicio.cat
 
-    def fallar_importacion():
+    def fallar_importacion(*_args, **_kwargs):
         raise RuntimeError("error inesperado de importación")
 
     monkeypatch.setattr(catalogo, "importar", fallar_importacion)
@@ -251,3 +251,7 @@ def test_api_subir_limpia_archivo_si_falla_la_reimportacion(tmp_path, monkeypatc
             files={"archivo": ("actas.csv", b"id_acta,id_pedido\n", "text/csv")},
         )
     assert list(catalogo.subidos_dir.glob("fiscalizacion_*.csv")) == []
+    assert any(
+        fila["estado"] == "error"
+        for fila in c.app.state.sincronizador.historial()
+    )
