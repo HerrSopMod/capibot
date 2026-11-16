@@ -1,0 +1,92 @@
+{
+  "finanzas": {
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_factura": ["factura", "nro factura", "numero factura"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "fecha_emision": ["emision", "fecha factura"],
+    "fecha_vencimiento": ["vencimiento", "fecha limite"],
+    "importe": ["monto", "total"],
+    "saldo": ["deuda", "saldo pendiente"],
+    "estado_pago": ["estado", "situacion"]
+  },
+  "operaciones": {
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "fecha_solicitud": ["fecha pedido", "solicitado el"],
+    "estado_operativo": ["estado", "situacion"]
+  },
+  "logistica": {
+    "id_entrega": ["entrega", "codigo entrega"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "fecha_estimada": ["fecha prevista", "fecha estimada entrega"],
+    "fecha_real": ["fecha entrega", "fecha entregada"],
+    "estado_entrega": ["estado", "situacion"]
+  },
+  "atencion": {
+    "id_ticket": ["ticket", "codigo ticket"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "fecha_reclamo": ["fecha reclamo", "fecha solicitud"],
+    "estado_ticket": ["estado", "situacion"]
+  },
+  "fiscalizacion": {
+    "id_acta": ["acta", "codigo acta"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "fecha_acta": ["fecha multa", "fecha infraccion"],
+    "estado_acta": ["estado", "situacion"]
+  },
+  "recaudacion": {
+    "id_pago": ["pago", "codigo pago"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "fecha_pago": ["fecha de pago"],
+    "importe": ["monto", "total"],
+    "estado_pago": ["estado", "situacion"]
+  },
+  "notificaciones": {
+    "id_notificacion": ["notificacion", "codigo notificacion"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "fecha_envio": ["fecha notificacion"],
+    "estado_envio": ["estado", "situacion"]
+  },
+  "impugnaciones": {
+    "id_recurso": ["recurso", "codigo recurso"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "fecha_recurso": ["fecha impugnacion"],
+    "estado_recurso": ["estado", "situacion"]
+  },
+  "convenios": {
+    "id_convenio": ["convenio", "codigo convenio"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "fecha_inicio": ["inicio", "fecha convenio"],
+    "estado_convenio": ["estado", "situacion"]
+  },
+  "documentos": {
+    "id_documento": ["documento interno", "codigo documento"],
+    "id_pedido": ["pedido", "nro pedido", "numero pedido"],
+    "id_cliente": ["cliente", "codigo cliente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "estado_documento": ["estado", "situacion"]
+  },
+  "multas": {
+    "documento": ["dni", "nro doc", "numero documento", "identificacion"],
+    "id_cliente": ["codigo cliente", "cliente"],
+    "id_expediente": ["expediente", "nro expediente", "numero expediente"],
+    "id_multa": ["multa", "codigo multa", "codigo de multa", "numero multa"],
+    "ciudadano": ["nombre", "nombre ciudadano", "administrado"],
+    "area": ["area responsable", "dependencia"],
+    "fecha_infraccion": ["fecha multa", "fecha infraccion"],
+    "estado": ["situacion", "estado multa"],
+    "importe": ["monto", "total"],
+    "actualizado_en": ["fecha actualizacion", "actualizado", "ultima actualizacion"]
+  }
+}

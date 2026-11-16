@@ -105,6 +105,17 @@ dialog::backdrop{background:rgba(11,31,58,.45)}
 @media(max-width:560px){.chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}.chip{white-space:nowrap;scroll-snap-align:start}.brand small{display:none}}
 @media(max-width:560px){main{padding:12px}.msg.u{max-width:95%}.btn{padding:0 14px}}
 .veredicto{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.vchip{display:flex;flex-direction:column;padding:9px 16px;border-radius:12px;min-width:128px}.vchip small{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.05em}.vchip b{font-size:17px}.vchip.ok{background:var(--ok-bg);color:var(--ok)}.vchip.warn{background:var(--warn-bg);color:var(--warn)}.vchip.err{background:var(--err-bg);color:var(--err)}.vchip.neu{background:var(--soft2);color:var(--muted)}
+ .consulta-controls{display:grid;grid-template-columns:190px minmax(180px,1fr) auto;gap:10px;align-items:end;margin:14px 0}
+ .consulta-controls label{display:grid;gap:5px;font-size:13px;font-weight:600;color:var(--navy)}
+ .consulta-controls input,.consulta-controls select,.inc-filtros input,.inc-filtros select{font:inherit;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:10px 12px;min-width:0;color:var(--text)}
+ .inc-filtros{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+ .inc-filtros input{flex:1}
+ #inc-resultados textarea{display:block;width:100%;min-width:180px;min-height:54px;margin:6px 0;padding:7px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:12px}
+ #inc-resultados select{background:var(--card);color:var(--text);border-color:var(--line);margin:4px 0}
+ #inc-resultados .btn{min-height:34px;padding:2px 10px;font-size:12px}
+ .badge-tag{display:inline-block;margin:2px 3px 2px 0;padding:2px 8px;border-radius:99px;background:var(--soft2);font-size:11px;color:var(--navy2)}
+ .fuente-cell{white-space:normal;min-width:180px}
+ @media(max-width:560px){.consulta-controls{grid-template-columns:1fr}.consulta-controls .btn{width:100%}}
 nav svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px}
 footer{max-width:980px;margin:0 auto;padding:6px 16px 28px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;color:var(--muted);font-size:12.5px}footer img{width:22px;height:22px;background:#fff;border-radius:6px;padding:2px;border:1px solid var(--line)}footer .sep{flex:1 1 100%;height:0}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
@@ -129,47 +140,81 @@ footer{max-width:980px;margin:0 auto;padding:6px 16px 28px;display:flex;flex-wra
 </section>
 <div id="app" hidden>
 <header>
-  <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h7M4 12h7M4 17h7M15 7h5M15 12h5M15 17h5M11 7l4 5-4 5"/></svg></span>Capibot<small style="font-weight:400;opacity:.7;font-size:13px">consulta integrada de Excel</small></div>
-  <span class="pill demo">ENTORNO DEMO — DATOS FICTICIOS</span>
+  <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h7M4 12h7M4 17h7M15 7h5M15 12h5M15 17h5M11 7l4 5-4 5"/></svg></span>Capibot<small style="font-weight:400;opacity:.7;font-size:13px">consulta integrada de multas</small></div>
+  <span class="pill demo">ENTORNO DE DEMOSTRACIÓN — REGISTROS DE EJEMPLO</span>
   <span class="pill modo" id="modo" title="">…</span>
   <label style="font-size:12px;opacity:.85">Perfil <select id="perfil" aria-label="Perfil de acceso"></select></label>
   <button class="btn sec" id="salir" type="button" style="min-height:34px;padding:4px 10px">Cerrar sesión</button>
 </header>
 <nav role="tablist">
-  <button role="tab" data-p="consulta" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Consulta inteligente</button>
-  <button role="tab" data-p="fuentes" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5"/></svg>Detalle de fuentes</button>
+  <button role="tab" data-p="inicio" aria-selected="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg>Inicio / Resumen</button>
+  <button role="tab" data-p="multas" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8 11h6"/></svg>Consulta de multas</button>
+  <button role="tab" data-p="consulta" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Chat</button>
   <button role="tab" data-p="calidad" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Carga y calidad</button>
-  <button role="tab" data-p="resumen" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Resumen general</button>
+  <button role="tab" data-p="inconsistencias" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3zM12 9v5m0 3h.01"/></svg>Inconsistencias</button>
+  <button role="tab" data-p="fuentes" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5"/></svg>Fuentes de información</button>
 </nav>
 <main>
-<section class="panel on" id="p-consulta">
+<section class="panel on" id="p-inicio">
+  <div class="card bienvenida">
+    <h2>Resumen de integración</h2>
+    <p class="sub" style="margin:0">Consulta multas consolidadas desde bases SQLite locales y archivos Excel/CSV. La información es de demostración y no debe usarse para decisiones reales. Si una fuente no contiene un dato, se indica; las diferencias se muestran como advertencias.</p>
+  </div>
+  <div class="grid" id="kpis"></div>
+  <div class="card" style="margin-top:14px"><h2>Estado de las fuentes</h2><p class="sub">Áreas y fuentes locales disponibles en esta demostración.</p><div class="areas" id="areas-inicio"></div><p class="perfil-info" id="perfil-info"></p><p class="sub" style="margin:12px 0 0">Moneda: <span id="mon"></span> · Fecha de referencia: <span id="fref"></span></p></div>
+</section>
+<section class="panel" id="p-multas">
   <div class="card">
-    <h2>Pregunta sobre los datos de las diez áreas</h2>
-    <p class="sub">La demo conecta Finanzas, Operaciones, Logística, Atención, Fiscalización, Recaudación, Notificaciones, Impugnaciones, Convenios y Documentos. Son datos sintéticos; cada respuesta indica su archivo, hoja y fila.</p>
+    <h2>Consulta de multas</h2>
+    <p class="sub">Busca por documento de ejemplo de 8 dígitos, expediente o código de multa. No ingreses datos personales reales; usa identificadores de demostración.</p>
+    <form class="consulta-controls" id="multa-form">
+      <label for="multa-tipo">Buscar por<select id="multa-tipo"><option value="documento">Documento</option><option value="id_expediente">Número de expediente</option><option value="id_multa">Código de multa</option></select></label>
+      <label for="multa-valor">Identificador<input id="multa-valor" type="text" maxlength="80" placeholder="p. ej. 90000001" required autocomplete="off"></label>
+      <button class="btn" id="multa-buscar" type="submit">Consultar</button>
+    </form>
+    <p id="multa-status" class="upload-status" role="status" aria-live="polite"></p>
+    <div id="multa-resultados"></div>
+  </div>
+</section>
+<section class="panel" id="p-consulta">
+  <div class="card">
+    <h2>Chat de multas y datos integrados</h2>
+    <p class="sub">Consulta multas por documento de ejemplo, expediente o código. Las respuestas usan la misma consulta integrada, muestran procedencia y advierten si faltan datos o una fuente está desactualizada. También siguen disponibles las consultas útiles de las diez áreas.</p>
     <div class="areas" id="areas" aria-label="Fuentes conectadas"></div>
     <p class="perfil-info" id="perfil-info"></p>
     <div class="bar"><b style="font-size:13px;color:var(--navy)">Consultas de carga y calidad</b></div>
     <div class="chips" id="quality-chips"></div>
-    <div class="bar"><b style="font-size:13px;color:var(--navy)">Consultas de las diez áreas</b><button class="link" id="nueva" type="button">Nueva conversación</button></div>
+    <div class="bar"><b style="font-size:13px;color:var(--navy)">Consultas de multas y las diez áreas</b><button class="link" id="nueva" type="button">Nueva conversación</button></div>
     <div class="chips" id="chips"></div>
   </div>
   <div id="chat" aria-live="polite"></div>
-  <form id="f"><input type="text" id="q" maxlength="500" placeholder="Escribe tu pregunta, por ejemplo: ¿Cuál es el estado del pedido PE-015?" autocomplete="off" aria-label="Pregunta"><button class="btn" id="enviar">Enviar</button></form>
+  <form id="f"><input type="text" id="q" maxlength="500" placeholder="Ej.: ¿Qué multas tiene el documento 90000001?" autocomplete="off" aria-label="Pregunta"><button class="btn" id="enviar">Enviar</button></form>
 </section>
-<section class="panel" id="p-fuentes"><div class="card"><h2>Fuentes de la última respuesta</h2><p class="sub">Registros de los Excel que sustentan la respuesta. Haz clic en una fila para ver el registro original.</p><div id="fuentes-det"><p class="vacio">Aún no hay respuestas. Haz una consulta primero.</p></div></div></section>
+<section class="panel" id="p-inconsistencias">
+  <div class="card"><h2>Inconsistencias entre fuentes</h2><p class="sub">La aplicación conserva los valores de origen y señala diferencias; no decide cuál es correcto.</p>
+    <div class="inc-filtros"><select id="inc-estado" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="en_revision">En revisión</option><option value="resuelta">Resuelta</option></select><select id="inc-area" aria-label="Filtrar por área"><option value="">Todas las áreas</option></select><select id="inc-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select><input id="inc-busqueda" type="text" placeholder="Filtrar por multa, ciudadano o detalle" aria-label="Filtrar inconsistencias"></div>
+    <p id="inc-status" class="upload-status" role="status" aria-live="polite"></p><div id="inc-resultados"></div>
+  </div>
+</section>
+<section class="panel" id="p-fuentes">
+  <div class="card"><h2>Fuentes conectadas</h2><p class="sub">La vigencia se calcula desde la última sincronización exitosa. Las tres fechas se muestran separadas; si un valor no está disponible, se indica explícitamente.</p><p><button class="btn" id="sincronizar" type="button">Sincronizar ahora</button></p><p id="sync-status" class="upload-status" role="status" aria-live="polite"></p><div id="fuentes-integradas"></div></div>
+  <div class="card"><h2>Historial de sincronizaciones</h2><div id="sync-historial"></div></div>
+  <div class="card"><h2>Fuentes de la última respuesta del chat</h2><p class="sub">Filas de Excel que sustentan la respuesta. Haz clic en una fila para ver el registro original.</p><div id="fuentes-det"><p class="vacio">Aún no hay respuestas. Haz una consulta primero.</p></div></div>
+</section>
 <section class="panel" id="p-calidad"><div class="card"><h2>Archivos importados</h2><p class="sub">Sube Excel (.xlsx) o CSV (.csv) para agregar filas a un área. Se conservan las fuentes existentes; el sistema valida encabezados y vuelve a importar los datos.</p>
   <form class="upload-form" id="upload-form">
     <label class="upload-field" for="upload-area">Área<select id="upload-area" name="area" required></select></label>
     <label class="upload-field" for="upload-file">Archivo Excel o CSV<input id="upload-file" name="archivo" type="file" accept=".xlsx,.csv" required></label>
+    <button class="btn sec" id="preview-columns" type="button">Revisar encabezados CSV</button>
     <button class="btn" id="upload-submit" type="submit">Subir archivo</button>
   </form>
-  <p class="upload-help">Máximo 20 MB. El archivo debe incluir todas las columnas esperadas para el área. Las celdas vacías y los valores no válidos se reportan como avisos; las filas con campos obligatorios vacíos o valores no válidos se rechazan.</p>
+  <p class="upload-help">Máximo 20 MB. Se aceptan nombres equivalentes de columnas y se conservan las columnas adicionales. Los campos opcionales pueden omitirse; las filas con campos obligatorios vacíos o valores no válidos se rechazan.</p>
+  <div id="column-preview" class="upload-help" role="status" aria-live="polite"></div>
   <p id="upload-status" class="upload-status" role="status" aria-live="polite"></p>
   <div id="cargas"></div><p><button class="btn sec" id="reimp" type="button">Reimportar desde la carpeta</button></p>
   </div><div class="card"><h2>Filas rechazadas y avisos</h2><p class="sub">Los valores no válidos se identifican junto con su columna, valor original y ubicación.</p><p><button class="btn sec" id="descargar-calidad" type="button">Descargar rechazos y avisos (Excel)</button></p><p id="descargar-calidad-status" class="upload-status" role="status" aria-live="polite"></p><div id="rechazos"></div></div></section>
-<section class="panel" id="p-resumen"><div class="grid" id="kpis"></div><div class="card" style="margin-top:14px"><h2>Cómo leer este resumen</h2><p class="sub" style="margin:0">Son conteos reales de la importación actual y de esta sesión; no hay indicadores inventados. Moneda: <span id="mon"></span>. Fecha de referencia para atrasos: <span id="fref"></span>.</p></div></section>
 </main>
-<footer><span>Construido con</span><img src="/icons/python.svg" alt="Python" title="Python"><img src="/icons/fastapi.svg" alt="FastAPI" title="FastAPI"><img src="/icons/duckdb.svg" alt="DuckDB" title="DuckDB"><img src="/icons/html5.svg" alt="HTML5" title="HTML5"><img src="/icons/github.svg" alt="GitHub" title="GitHub"><img src="/icons/render.svg" alt="Render" title="Render"><span class="sep"></span><span>POC académica · SI806U · datos ficticios, solo lectura</span></footer>
+<footer><span>Construido con</span><img src="/icons/python.svg" alt="Python" title="Python"><img src="/icons/fastapi.svg" alt="FastAPI" title="FastAPI"><img src="/icons/duckdb.svg" alt="DuckDB" title="DuckDB"><img src="/icons/html5.svg" alt="HTML5" title="HTML5"><img src="/icons/github.svg" alt="GitHub" title="GitHub"><img src="/icons/render.svg" alt="Render" title="Render"><span class="sep"></span><span>POC académica · SI806U · registros de ejemplo, solo lectura</span></footer>
 <dialog id="dlg"><div class="dh"><b id="dt">Registro original</b><button class="x" id="dx" aria-label="Cerrar">×</button></div><div class="db" id="db"></div></dialog>
 </div>
 <script>
@@ -178,14 +223,17 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let contexto=null, ultima=null;
 const AREA_NOMBRE={finanzas:'Finanzas',operaciones:'Operaciones',logistica:'Logística',atencion:'Atención',fiscalizacion:'Fiscalización',recaudacion:'Recaudación',notificaciones:'Notificaciones',impugnaciones:'Impugnaciones',convenios:'Convenios',documentos:'Documentos'};
 const AREA_COLOR={finanzas:'#0E9F8E',operaciones:'#3B72D9',logistica:'#6D4AE0',atencion:'#B54708',fiscalizacion:'#047857',recaudacion:'#2563EB',notificaciones:'#9333EA',impugnaciones:'#C2410C',convenios:'#0F766E',documentos:'#475569'};
-async function api(u,o){const r=await fetch(u,o);if(r.status===401&&u!=='/api/login'){mostrarLogin('La sesión expiró. Inicia sesión nuevamente.')}if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
+async function api(u,o){const r=await fetch(u,o);if(r.status===401&&u!=='/api/login'){mostrarLogin('La sesión expiró. Inicia sesión nuevamente.')}if(!r.ok){let m='No se pudo completar la solicitud.';try{const e=await r.json();m=e.detail||m}catch{m=(await r.text()).slice(0,200)||m}throw new Error(m)}return r.json()}
 function perfil(){return $('#perfil').value}
 function mostrarLogin(mensaje=''){$('#app').hidden=true;$('#login').hidden=false;$('#login-error').textContent=mensaje}
 
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p));
-  if(b.dataset.p==='calidad')cargarCalidad(); if(b.dataset.p==='resumen')cargarResumen();
+  if(b.dataset.p==='calidad')cargarCalidad().catch(e=>{ $('#upload-status').className='upload-status err'; $('#upload-status').textContent=e.message });
+  if(b.dataset.p==='inicio')cargarResumen();
+  if(b.dataset.p==='inconsistencias')cargarInconsistencias();
+  if(b.dataset.p==='fuentes')cargarFuentes();
 });
 
 function tablaHtml(t){
@@ -194,14 +242,17 @@ function tablaHtml(t){
     t.filas.map(f=>`<tr>${f.map((v,i)=>`<td class="${d.has(i)?'r':''} ${String(v).length>60?'wrap':''}">${celda(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 const ESTADOS={ok:['pagado','entregado','completado','cerrado'],warn:['pendiente','parcial','en ruta','en proceso','abierto','en revisión'],err:['sin registro de entrega'],neu:['cancelado']};
-function celda(v){const s=String(v).trim().toLowerCase();for(const [c,l] of Object.entries(ESTADOS))if(l.includes(s))return `<span class="est ${c}">${esc(v)}</span>`;return esc(v)}
-const BIENVENIDA=`<div class="msg a bienvenida"><b>Hola, soy Capibot.</b><div class="texto">Esta demo integra diez áreas con datos sintéticos enlazados por identificadores de pedido. Para consultar las áreas nuevas, indica su nombre y un pedido (por ejemplo: «¿Qué registros tiene Fiscalización para PE-015?»).</div><ul><li>Si algo no consta en las fuentes, te lo digo en vez de inventarlo.</li><li>Las respuestas muestran el archivo, hoja y fila de origen.</li><li>Usa identificadores ficticios como <b>PE-015</b> o <b>CL-001</b>, o pulsa una sugerencia.</li></ul></div>`;
+function celda(v){const s=String(v).trim().toLowerCase();if(s==='contradictorio')return `<span class="est err">${esc(v)}</span>`;for(const [c,l] of Object.entries(ESTADOS))if(l.includes(s))return `<span class="est ${c}">${esc(v)}</span>`;return esc(v)}
+const BIENVENIDA=`<div class="msg a bienvenida"><b>Hola, soy Capibot.</b><div class="texto">Puedo consultar multas de ejemplo consolidadas por documento, expediente o código. Por ejemplo: «¿Qué multas tiene el documento 90000001?» o «¿Cuánto debe este ciudadano?».</div><ul><li>Reutilizo la consulta integrada: no invento importes ni estados.</li><li>Las respuestas muestran fuentes, fechas y advertencias cuando están disponibles.</li><li>Si faltan datos o una fuente no está disponible, no afirmo que no existan multas.</li></ul></div>`;
 function reiniciar(){$('#chat').innerHTML=BIENVENIDA;contexto=null;ultima=null;$('#fuentes-det').innerHTML='<p class="vacio">Aún no hay respuestas. Haz una consulta primero.</p>'}
 $('#nueva').onclick=reiniciar;
 let PERFILES=[];
 function infoPerfil(){const p=PERFILES.find(x=>x.id===perfil());$('#perfil-info').innerHTML=p?`Perfil actual: <b>${esc(p.nombre)}</b> — acceso a ${p.areas.map(a=>AREA_NOMBRE[a]).join(', ')}. ${p.areas.length<10?'Las preguntas que necesiten otras áreas serán denegadas.':''}`:''}
-function pintarAreas(cs){$('#areas').innerHTML=cs.map(c=>`<div class="area ${c.estado==='ok'?'':'off'}" style="--c:${AREA_COLOR[c.area]}"><b>${AREA_NOMBRE[c.area]}</b><span>${c.estado==='ok'?`${c.validas} registros · v${c.version}`:'No disponible'}</span></div>`).join('')}
-function fuenteBtn(f){return `<button class="src" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}" title="v${f.version} · modificado ${esc(f.modificado_en)} · sha ${esc(f.hash)}">${esc(f.archivo)} · ${esc(f.hoja)} · fila ${f.fila}${f.id?' · '+esc(f.id):''}</button>`}
+function pintarAreas(cs){const html=cs.map(c=>`<div class="area ${c.estado==='ok'?'':'off'}" style="--c:${AREA_COLOR[c.area]}"><b>${AREA_NOMBRE[c.area]}</b><span>${c.estado==='ok'?`${c.validas} registros · v${c.version}`:'No disponible'}</span></div>`).join('');$('#areas').innerHTML=html;$('#areas-inicio').innerHTML=html}
+function fuenteBtn(f){
+  if(!f.archivo||!f.hoja||!f.fila)return `<span class="badge-tag">${esc(f.tipo||'Fuente')} · ${esc(f.nombre||'Sin nombre')}${f.vigencia?` · ${esc(({vigente:'vigente',desactualizada:'desactualizada',error:'error de sincronización',fecha_no_disponible:'fecha no disponible'})[f.vigencia]||'fecha no disponible')}`:''}</span>`;
+  return `<button class="src" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}" title="v${f.version} · modificado ${esc(f.modificado_en)} · sha ${esc(f.hash)}">${esc(f.archivo)} · ${esc(f.hoja)} · fila ${f.fila}${f.id?' · '+esc(f.id):''}</button>`;
+}
 function lineaHtml(l){return l.length?`<h3>Línea de tiempo</h3><ul class="timeline">${l.map(e=>`<li style="--c:${AREA_COLOR[e.area]}"><small>${esc(e.fecha)}</small>${esc(e.evento)} <small>· ${AREA_NOMBRE[e.area]}</small></li>`).join('')}</ul>`:''}
 
 const VC={si:["ok","Sí"],no:["warn","No"],contradictorio:["err","Contradictorio"],no_consta:["neu","No consta"]};
@@ -231,8 +282,8 @@ document.querySelectorAll('#chips,#quality-chips').forEach(el=>el.onclick=e=>{if
 
 function pintarFuentes(r){
   if(!r.fuentes.length){$('#fuentes-det').innerHTML='<p class="vacio">La última respuesta no usó filas de ningún Excel.</p>';return}
-  $('#fuentes-det').innerHTML=`<div class="tw"><table><thead><tr><th>Área</th><th>Archivo</th><th>Hoja</th><th class="r">Fila</th><th>Registro</th><th class="r">Versión</th><th>Actualizado</th><th>Huella</th></tr></thead><tbody>${
-   r.fuentes.map(f=>`<tr class="src-row" style="cursor:pointer" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}"><td>${AREA_NOMBRE[f.area]}</td><td>${esc(f.archivo)}</td><td>${esc(f.hoja)}</td><td class="r">${f.fila}</td><td>${esc(f.id||'—')}</td><td class="r">${f.version}</td><td>${esc(f.modificado_en.replace('T',' '))}</td><td><code>${esc(f.hash)}</code></td></tr>`).join('')}</tbody></table></div>`;
+  $('#fuentes-det').innerHTML=`<div class="tw"><table><thead><tr><th>Área</th><th>Fuente / archivo</th><th>Registro</th><th>Fecha del dato</th><th>Modificación del archivo</th><th>Última sincronización</th><th>Vigencia</th></tr></thead><tbody>${
+   r.fuentes.map(f=>`<tr ${f.archivo&&f.hoja&&f.fila?`class="src-row" style="cursor:pointer" data-a="${esc(f.archivo)}" data-h="${esc(f.hoja)}" data-f="${f.fila}"`:''}><td>${esc(AREA_NOMBRE[f.area]||f.area||'—')}</td><td>${esc(f.nombre||f.archivo||'Fuente')}${f.archivo&&f.hoja?`<br><small>${esc(f.archivo)} / ${esc(f.hoja)} / fila ${esc(f.fila)}</small>`:''}</td><td>${esc(f.id||f.sistema||'—')}</td><td>${fechaVisible(f.fecha_dato)}</td><td>${fechaVisible(f.fecha_modificacion_archivo||f.modificado_en)}</td><td>${fechaVisible(f.ultima_sincronizacion)}</td><td>${vigenciaHtml(f.vigencia)}${f.advertencia?`<br><small>${esc(f.advertencia)}</small>`:''}</td></tr>`).join('')}</tbody></table></div>`;
 }
 document.addEventListener("click",async e=>{const c=e.target.closest(".copiar");if(c){try{await navigator.clipboard.writeText(c.closest(".msg").querySelector(".texto").innerText);c.textContent="Copiado ✓"}catch{c.textContent="No se pudo copiar"}setTimeout(()=>c.textContent="Copiar respuesta",1500);return}const el=e.target.closest('[data-a][data-h][data-f]'); if(el)verFuente(el.dataset.a,el.dataset.h,el.dataset.f)});
 async function verFuente(a,h,f){
@@ -243,8 +294,105 @@ async function verFuente(a,h,f){
 }
 $('#dx').onclick=()=>$('#dlg').close();
 
-function cargasHtml(cs){return `<div class="tw"><table><thead><tr><th>Área</th><th>Archivo</th><th>Hoja</th><th>Estado</th><th class="r">Versión</th><th class="r">Leídas</th><th class="r">Válidas</th><th class="r">Rechazadas</th><th class="r">Avisos</th><th>Actualizado</th></tr></thead><tbody>${
- cs.map(c=>`<tr><td>${esc(AREA_NOMBRE[c.area]||c.area)}</td><td>${(c.archivos||[{archivo:c.archivo,hoja:c.hoja}]).map(f=>esc(f.archivo)).join('<br>')}</td><td>${(c.archivos||[{archivo:c.archivo,hoja:c.hoja}]).map(f=>esc(f.hoja)).join('<br>')}</td><td><span class="est ${c.estado==='ok'?'ok':'err'}">${c.estado==='ok'?'Importado':'Error'}</span>${c.error?`<div class="vacio" style="white-space:normal">${esc(c.error)}</div>`:''}</td><td class="r">${c.version??'—'}</td><td class="r">${c.filas_leidas}</td><td class="r">${c.validas}</td><td class="r">${c.rechazadas}</td><td class="r">${c.avisos}</td><td>${esc((c.modificado_en||'—').replace('T',' '))}</td></tr>`).join('')}</tbody></table></div>`}
+function dinero(v){return v===null||v===undefined||v===''?'—':`S/ ${Number(v).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2})}`}
+function fuenteMultaHtml(f){const detalle=[f.estado?`Estado: ${f.estado}`:'',f.importe!==null&&f.importe!==undefined?`Importe: ${dinero(f.importe)}`:'',f.actualizado_en?`Actualizado: ${String(f.actualizado_en).replace('T',' ')}`:''].filter(Boolean).join(' · ');return `<span class="badge-tag">${esc(f.tipo)} · ${esc(f.nombre)}${f.archivo?` · ${esc(f.archivo)}${f.hoja?` / ${esc(f.hoja)}`:''}${f.fila?` / fila ${f.fila}`:''}`:''}${detalle?`<br>${esc(detalle)}`:''}</span>`}
+function fechaVisible(v){return v?esc(String(v).replace('T',' ')):'Fecha no disponible'}
+function vigenciaHtml(v){const textos={vigente:'Vigente',desactualizada:'Desactualizada',error:'Error de sincronización',fecha_no_disponible:'Fecha no disponible'};const clase=v==='vigente'?'ok':v==='desactualizada'||v==='error'?'warn':'neu';return `<span class="est ${clase}">${esc(textos[v]||'Fecha no disponible')}</span>`}
+function tablaMultasHtml(multas){
+  return `<div class="tw"><table><thead><tr><th>Multa</th><th>Ciudadano</th><th>Área responsable</th><th>Fecha</th><th>Estado</th><th class="r">Importe</th><th>Fuentes / inconsistencias</th><th>Actualización y vigencia</th></tr></thead><tbody>${multas.map(m=>{
+    const alertas=(m.inconsistencias||[]).map(i=>`<div class="alerta"><b>${esc(i.tipo)}</b>${esc(i.detalle)}</div>`).join('');
+    const fuentes=(m.fuentes||[]).map(fuenteMultaHtml).join('');
+    const fechas=(m.fuentes||[]).map(f=>`<div class="badge-tag">${esc(f.nombre)} · ${vigenciaHtml(f.vigencia)}<br>Dato: ${fechaVisible(f.fecha_dato)}<br>Archivo: ${fechaVisible(f.fecha_modificacion_archivo)}<br>Sincronización: ${fechaVisible(f.ultima_sincronizacion)}${f.advertencia?`<br><span class="warn">${esc(f.advertencia)}</span>`:''}</div>`).join('');
+    const ciudadano=String(m.ciudadano||'No consta').replace(/\s+fictici[oa]\b/ig,'');
+    return `<tr><td><b>${esc(m.id_multa)}</b><br><small>${esc(m.id_expediente||'Sin expediente')}</small></td><td>${esc(ciudadano)}<br><small>${esc(m.documento||'')}</small></td><td>${esc(m.area||'No consta')}</td><td>${esc(m.fecha_infraccion||'No consta')}</td><td>${celda(m.estado||'No consta')}</td><td class="r">${dinero(m.importe)}</td><td class="fuente-cell">${fuentes}${alertas}</td><td>${fechas||`Dato: ${fechaVisible(m.fecha_actualizacion)}`}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+$('#multa-form').onsubmit=async e=>{
+  e.preventDefault();
+  const boton=$('#multa-buscar'), status=$('#multa-status'), destino=$('#multa-resultados');
+  boton.disabled=true; status.className='upload-status'; status.textContent='Consultando las fuentes…'; destino.innerHTML='';
+  try{
+    const tipo=$('#multa-tipo').value, valor=$('#multa-valor').value.trim();
+    const r=await api(`/api/multas/buscar?tipo=${encodeURIComponent(tipo)}&valor=${encodeURIComponent(valor)}&perfil=${encodeURIComponent(perfil())}`);
+    status.textContent=r.total?`Encontré ${r.total} multa(s) consolidada(s).`:`No encontré coincidencias en las fuentes disponibles. Esto no descarta multas si alguna fuente está incompleta o no disponible.`;
+    if(r.advertencias?.length)status.textContent+=` Advertencias: ${r.advertencias.map(a=>typeof a==='string'?a:`${a.tipo||'Aviso'}: ${a.detalle||''}`).join(' ')}`;
+    destino.innerHTML=r.multas.length?tablaMultasHtml(r.multas):'<p class="vacio">No hay resultados para ese identificador.</p>';
+  }catch(err){status.className='upload-status err';status.textContent=err.message}
+  finally{boton.disabled=false}
+};
+
+async function cargarFuentes(){
+  const destino=$('#fuentes-integradas');
+  destino.innerHTML='<p class="pensando">Consultando fuentes conectadas</p>';
+  try{
+    const r=await api(`/api/fuentes?perfil=${encodeURIComponent(perfil())}`);
+    destino.innerHTML=r.fuentes.length?`<div class="tw"><table><thead><tr><th>Tipo</th><th>Fuente</th><th>Área</th><th>Sincronización</th><th>Vigencia</th><th class="r">Registros</th><th>Fecha del dato</th><th>Modificación del archivo</th><th>Última sincronización exitosa</th></tr></thead><tbody>${r.fuentes.map(f=>`<tr><td>${esc(f.tipo)}</td><td>${esc(f.nombre)}${f.error?`<div class="vacio">${esc(f.error)}</div>`:''}${f.advertencia?`<div class="warn">${esc(f.advertencia)}</div>`:''}</td><td>${esc(AREA_NOMBRE[f.area]||f.area||'—')}</td><td><span class="est ${f.estado_sincronizacion==='ok'?'ok':f.estado_sincronizacion==='error'?'err':'warn'}">${esc(f.estado_sincronizacion||'no_disponible')}</span></td><td>${vigenciaHtml(f.vigencia)}<br><small>Umbral: ${esc(f.umbral_dias)} día(s)</small></td><td class="r">${esc(f.registros??0)}</td><td>${fechaVisible(f.fecha_dato)}</td><td>${fechaVisible(f.fecha_modificacion_archivo)}</td><td>${fechaVisible(f.ultima_sincronizacion)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="vacio">No hay fuentes conectadas.</p>';
+    const historial=await api('/api/sincronizaciones');
+    $('#sync-historial').innerHTML=historial.historial.length?`<div class="tw"><table><thead><tr><th>Fuente</th><th>Inicio</th><th>Fin</th><th>Resultado</th><th class="r">Registros</th><th>Detalle</th></tr></thead><tbody>${historial.historial.map(h=>`<tr><td>${esc(h.nombre)}</td><td>${fechaVisible(h.iniciada_en)}</td><td>${fechaVisible(h.terminada_en)}</td><td>${esc(h.estado)}</td><td class="r">${esc(h.registros_procesados)}</td><td>${esc(h.mensaje||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="vacio">Aún no hay sincronizaciones registradas.</p>';
+  }catch(err){destino.innerHTML=`<div class="alerta denegado">${esc(err.message)}</div>`}
+}
+$('#sincronizar').onclick=async()=>{
+  const boton=$('#sincronizar'), estadoSync=$('#sync-status');
+  boton.disabled=true; estadoSync.className='upload-status'; estadoSync.textContent='Comprobando cambios locales…';
+  try{
+    const r=await api('/api/sincronizar',{method:'POST'});
+    estadoSync.textContent=`Sincronización ${r.estado}: ${r.fuentes_cambiadas} fuente(s) cambiada(s), ${r.registros_procesados} registro(s) procesado(s).${r.errores.length?' Errores: '+r.errores.join(' '):''}`;
+    await cargarFuentes(); await cargarCalidad(); await cargarResumen();
+  }catch(err){estadoSync.className='upload-status err';estadoSync.textContent=err.message}
+  finally{boton.disabled=false}
+};
+
+let INCONSISTENCIAS=[];
+function pintarInconsistencias(){
+  const tipo=$('#inc-tipo').value, area=$('#inc-area').value, estado=$('#inc-estado').value, filtro=$('#inc-busqueda').value.trim().toLowerCase();
+  const filas=INCONSISTENCIAS.filter(i=>(!tipo||i.tipo===tipo)&&(!area||i.area===area)&&(!estado||i.estado===estado)&&(!filtro||`${i.id_multa||''} ${i.documento||''} ${i.detalle||''}`.toLowerCase().includes(filtro)));
+  $('#inc-resultados').innerHTML=filas.length?`<div class="tw"><table><thead><tr><th>Tipo</th><th>Multa</th><th>Documento</th><th>Motivo / seguimiento</th><th>Fuentes involucradas</th><th>Acción e historial</th></tr></thead><tbody>${filas.map(i=>`<tr><td><span class="est warn">${esc(i.tipo)}</span><br><small>${esc(AREA_NOMBRE[i.area]||i.area||'Sin área')}</small><br><span class="est ${i.estado==='resuelta'?'ok':i.estado==='en_revision'?'warn':'neu'}">${esc(i.estado)}</span>${i.requiere_revision?'<div class="warn">Requiere nueva revisión</div>':''}</td><td>${esc(i.id_multa||'—')}</td><td>${esc(i.documento||'—')}</td><td class="wrap">${esc(i.detalle)}<br><small>Observación: ${esc(i.observacion||'—')} · Cambio: ${fechaVisible(i.actualizada_en)}</small></td><td class="fuente-cell">${(i.fuentes||[]).map(fuenteMultaHtml).join('')}</td><td><select data-inc-estado="${esc(i.id)}" aria-label="Nuevo estado"><option value="pendiente" ${i.estado==='pendiente'?'selected':''}>Pendiente</option><option value="en_revision" ${i.estado==='en_revision'?'selected':''}>En revisión</option><option value="resuelta" ${i.estado==='resuelta'?'selected':''}>Resuelta</option></select><textarea data-inc-observacion="${esc(i.id)}" maxlength="1000" aria-label="Observación">${esc(i.observacion||'')}</textarea><button class="btn sec" data-inc-guardar="${esc(i.id)}" type="button">Guardar</button><details><summary>Historial (${i.historial?.length||0})</summary>${(i.historial||[]).map(h=>`<div><b>${esc(h.accion)}</b> · ${esc(h.estado)} · ${fechaVisible(h.fecha)}${h.observacion?`<br>${esc(h.observacion)}`:''}${h.detalle?`<br>${esc(h.detalle)}`:''}</div>`).join('')}</details></td></tr>`).join('')}</tbody></table></div>`:'<p class="vacio">No hay inconsistencias que coincidan con el filtro.</p>';
+}
+async function cargarInconsistencias(){
+  const status=$('#inc-status'), destino=$('#inc-resultados');
+  status.className='upload-status'; status.textContent='Comparando registros de las fuentes…'; destino.innerHTML='';
+  try{
+    const r=await api(`/api/inconsistencias?perfil=${encodeURIComponent(perfil())}`);
+    INCONSISTENCIAS=r.inconsistencias||[];
+    const tipos=[...new Set(INCONSISTENCIAS.map(i=>i.tipo))].sort();
+    const areas=[...new Set(INCONSISTENCIAS.map(i=>i.area).filter(Boolean))].sort();
+    $('#inc-tipo').innerHTML='<option value="">Todos los tipos</option>'+tipos.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    $('#inc-area').innerHTML='<option value="">Todas las áreas</option>'+areas.map(a=>`<option value="${esc(a)}">${esc(AREA_NOMBRE[a]||a)}</option>`).join('');
+    status.textContent=`Se encontraron ${r.total} inconsistencias activas. Los registros resueltos se conservan en el seguimiento.`;
+    pintarInconsistencias();
+  }catch(err){status.className='upload-status err';status.textContent=err.message}
+}
+$('#inc-tipo').onchange=pintarInconsistencias;
+$('#inc-area').onchange=pintarInconsistencias;
+$('#inc-estado').onchange=pintarInconsistencias;
+$('#inc-busqueda').oninput=pintarInconsistencias;
+$('#inc-resultados').onclick=async e=>{
+  const boton=e.target.closest('[data-inc-guardar]');
+  if(!boton)return;
+  const id=boton.dataset.incGuardar, estado=$(`[data-inc-estado="${id}"]`).value, observacion=$(`[data-inc-observacion="${id}"]`).value;
+  boton.disabled=true;
+  try{
+    await api(`/api/inconsistencias/${encodeURIComponent(id)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado,observacion})});
+    await cargarInconsistencias();
+  }catch(err){$('#inc-status').className='upload-status err';$('#inc-status').textContent=err.message}
+  finally{boton.disabled=false}
+};
+
+$('#preview-columns').onclick=async()=>{
+  const archivo=$('#upload-file').files[0], estado=$('#column-preview');
+  if(!archivo){estado.textContent='Selecciona un archivo CSV primero.';return}
+  if(!archivo.name.toLowerCase().endsWith('.csv')){estado.textContent='La revisión previa de encabezados está disponible para CSV; los encabezados XLSX se validan al cargar.';return}
+  try{
+    const texto=await archivo.text(), primera=(texto.split(/\r?\n/,1)[0]||'');
+    const delimitador=[',',';','\t','|'].sort((a,b)=>primera.split(b).length-primera.split(a).length)[0];
+    const encabezados=primera.split(delimitador).map(x=>x.trim().replace(/^"|"$/g,''));
+    const r=await api('/api/columnas/analizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area:$('#upload-area').value,columnas:encabezados})});
+    estado.innerHTML=r.error?`<span style="color:var(--warn)">${esc(r.error)}</span>`:`Asociaciones reconocidas: ${r.asociaciones.map(x=>`${esc(x.origen)} → <b>${esc(x.campo)}</b>`).join(' · ')||'ninguna'}. ${r.extras.length?`Columnas adicionales conservadas: ${r.extras.map(esc).join(', ')}.`:''}`;
+  }catch(err){estado.textContent=err.message}
+};
+
+function cargasHtml(cs){return `<div class="tw"><table><thead><tr><th>Área</th><th>Archivo</th><th>Hoja</th><th>Estado</th><th class="r">Versión</th><th class="r">Leídas</th><th class="r">Aceptadas sin avisos</th><th class="r">Aceptadas con avisos</th><th class="r">Rechazadas</th><th class="r">Avisos</th><th>Archivo modificado</th></tr></thead><tbody>${
+ cs.map(c=>`<tr><td>${esc(AREA_NOMBRE[c.area]||c.area)}</td><td>${(c.archivos||[{archivo:c.archivo,hoja:c.hoja}]).map(f=>esc(f.archivo)).join('<br>')}</td><td>${(c.archivos||[{archivo:c.archivo,hoja:c.hoja}]).map(f=>esc(f.hoja)).join('<br>')}</td><td><span class="est ${c.estado==='ok'?'ok':'err'}">${c.estado==='ok'?'Importado':'Error'}</span>${c.error?`<div class="vacio" style="white-space:normal">${esc(c.error)}</div>`:''}</td><td class="r">${c.version??'—'}</td><td class="r">${c.filas_leidas}</td><td class="r">${Math.max(0,c.validas-(c.aceptadas_con_advertencias||0))}</td><td class="r">${c.aceptadas_con_advertencias||0}</td><td class="r">${c.rechazadas}</td><td class="r">${c.avisos}</td><td>${fechaVisible(c.modificado_en)}</td></tr>`).join('')}</tbody></table></div>`}
 async function cargarCalidad(){
   const c=await api('/api/calidad'); $('#cargas').innerHTML=cargasHtml(c.cargas);
   const rows=[...c.rechazos.map(r=>({...r,tipo:'Rechazada',columna:'',valor:'',detalle:r.causa})),
@@ -271,7 +419,7 @@ $('#upload-form').onsubmit=async e=>{
     const r=await fetch('/api/subir',{method:'POST',body:datos});
     const cuerpo=await r.json();
     if(!r.ok)throw new Error(cuerpo.detail||'No se pudo procesar el archivo.');
-    estadoSubida.textContent=`${cuerpo.archivo}: ${cuerpo.carga.validas} filas válidas, ${cuerpo.carga.rechazadas} rechazadas y ${cuerpo.carga.avisos} avisos.`;
+    estadoSubida.textContent=`${cuerpo.archivo}: ${Math.max(0,cuerpo.carga.validas-(cuerpo.carga.aceptadas_con_advertencias||0))} aceptadas sin avisos, ${cuerpo.carga.aceptadas_con_advertencias||0} aceptadas con avisos y ${cuerpo.carga.rechazadas} rechazadas.`;
     e.currentTarget.reset(); await cargarCalidad(); await estado();
   }catch(err){estadoSubida.className='upload-status err';estadoSubida.textContent=err.message}
   finally{boton.disabled=false}
@@ -283,11 +431,13 @@ $('#reimp').onclick=async()=>{
   finally{$('#reimp').disabled=false}
 };
 async function cargarResumen(){
-  const e=await estado(), m=e.metricas;
-  const k=[[Object.values(m.registros_validos).reduce((a,b)=>a+b,0),'registros válidos importados'],...Object.entries(m.registros_validos).map(([a,n])=>[n,'registros de '+AREA_NOMBRE[a]]),
-    [m.filas_rechazadas,'filas rechazadas al importar'],[m.avisos_de_calidad,'avisos de calidad (campos vacíos)'],[m.inconsistencias_entre_areas??'—','inconsistencias entre áreas'],[m.consultas_en_esta_sesion,'consultas en esta sesión']];
-  $('#kpis').innerHTML=k.map(([n,t])=>`<div class="kpi"><b>${n}</b><span>${t}</span></div>`).join('');
-  $('#mon').textContent=e.moneda; $('#fref').textContent=e.fecha_referencia.split('-').reverse().join('/');
+  try{
+    const [e,m]=await Promise.all([estado(),api(`/api/resumen?perfil=${encodeURIComponent(perfil())}`)]);
+    const ultima=m.ultima_actualizacion?String(m.ultima_actualizacion).replace('T',' '):'No disponible';
+    const k=[[m.registros_integrados,'multas integradas'],[m.areas,'áreas con registros'],[m.multas_pendientes,'multas pendientes'],[m.inconsistencias,'inconsistencias detectadas'],[ultima,'última actualización']];
+    $('#kpis').innerHTML=k.map(([n,t])=>`<div class="kpi"><b>${esc(n)}</b><span>${esc(t)}</span></div>`).join('');
+    $('#mon').textContent=e.moneda; $('#fref').textContent=e.fecha_referencia.split('-').reverse().join('/');
+  }catch(err){$('#kpis').innerHTML=`<div class="alerta denegado">${esc(err.message)}</div>`}
 }
 async function estado(){
   const e=await api('/api/estado'); const m=$('#modo'); m.textContent=e.modo.nombre; m.title=e.modo.detalle; m.classList.toggle('ia',e.modo.ia); pintarAreas(e.cargas); return e;
@@ -299,8 +449,9 @@ async function iniciarApp(){
   $('#quality-chips').innerHTML=sg.slice(0,5).map(s=>`<button class="chip" type="button">${esc(s)}</button>`).join('');
   $('#chips').innerHTML=sg.slice(5).map(s=>`<button class="chip" type="button">${esc(s)}</button>`).join('');
   PERFILES=ps; $('#perfil').value='analista';
-  $('#perfil').onchange=()=>{contexto=null;infoPerfil()}; infoPerfil(); reiniciar();
-  await estado();
+  $('#perfil').onchange=()=>{contexto=null;infoPerfil();if($('#p-inicio').classList.contains('on'))cargarResumen()};
+  infoPerfil(); reiniciar();
+  await cargarResumen();
 }
 $('#login-form').onsubmit=async e=>{
   e.preventDefault();

@@ -48,5 +48,5 @@ def pregunta_sensible(texto: str) -> str | None:
     """Motivo de bloqueo si la pregunta pide o aporta credenciales o documentos de identidad."""
     if _SENSIBLE.search(texto):
         return ("Esta demo no maneja DNI, contraseñas ni credenciales: no las escribas aquí. "
-                "Consulta usando los identificadores ficticios (por ejemplo CL-001 o PE-015).")
+                "Consulta usando identificadores de ejemplo (por ejemplo CL-001 o PE-015).")
     return None
